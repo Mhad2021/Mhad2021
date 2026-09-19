@@ -28,6 +28,12 @@ _DEFAULT_SEVERITY: dict[AlertType, AlertSeverity] = {
 }
 
 
+def _minutes(seconds: Any) -> str:
+    """'1 minute' / '12 minutes' — never '1 minutes'."""
+    count = max(1, int(seconds or 0) // 60)
+    return f"{count} minute" if count == 1 else f"{count} minutes"
+
+
 def build_message(
     alert_type: AlertType, employee: User, context: dict[str, Any]
 ) -> tuple[str, str]:
@@ -35,10 +41,9 @@ def build_message(
     name = employee.first_name or employee.full_name
 
     if alert_type is AlertType.IDLE_NO_BREAK:
-        mins = max(1, int(context.get("idle_seconds", 0)) // 60)
         return (
             f"{name} is inactive",
-            f"{name} has been inactive for {mins} minutes. "
+            f"{name} has been inactive for {_minutes(context.get('idle_seconds'))}. "
             f"No break is currently active.",
         )
 
@@ -57,12 +62,11 @@ def build_message(
         )
 
     if alert_type is AlertType.AGENT_OFFLINE:
-        mins = max(1, int(context.get("offline_seconds", 0)) // 60)
         return (
             f"{name}'s laptop is offline",
             f"{name} is still clocked in but their laptop stopped reporting "
-            f"{mins} minutes ago. The machine may be shut down, asleep or "
-            f"disconnected from the network.",
+            f"{_minutes(context.get('offline_seconds'))} ago. The machine may be "
+            f"shut down, asleep or disconnected from the network.",
         )
 
     if alert_type is AlertType.AGENT_TERMINATED:
@@ -73,25 +77,26 @@ def build_message(
         )
 
     if alert_type is AlertType.LATE_ARRIVAL:
-        mins = max(1, int(context.get("late_by_seconds", 0)) // 60)
         expected = context.get("scheduled_start", "their scheduled start")
         return (
             f"{name} arrived late",
-            f"{name} clocked in {mins} minutes after {expected}.",
+            f"{name} clocked in {_minutes(context.get('late_by_seconds'))} "
+            f"after {expected}.",
         )
 
     if alert_type is AlertType.EARLY_DEPARTURE:
-        mins = max(1, int(context.get("early_by_seconds", 0)) // 60)
         return (
             f"{name} left early",
-            f"{name} clocked out {mins} minutes before the end of their shift.",
+            f"{name} clocked out {_minutes(context.get('early_by_seconds'))} "
+            f"before the end of their shift.",
         )
 
     if alert_type is AlertType.MISSING_CLOCK_OUT:
-        hours = int(context.get("open_hours", 0))
+        hours = max(1, int(context.get("open_hours", 0)))
+        unit = "hour" if hours == 1 else "hours"
         return (
             f"{name} never clocked out",
-            f"{name}'s session has been open for {hours} hours and was closed "
+            f"{name}'s session has been open for {hours} {unit} and was closed "
             f"automatically. Please review and correct the hours if needed.",
         )
 
