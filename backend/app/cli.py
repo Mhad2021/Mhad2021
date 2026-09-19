@@ -3,6 +3,7 @@
     python -m app.cli init-db          create tables (dev; use Alembic in prod)
     python -m app.cli create-admin     create the first administrator
     python -m app.cli seed-demo        populate a demo org for evaluation
+    python -m app.cli doctor           check the setup and report what is wrong
     python -m app.cli serve            run the server for everyone on this network
     python -m app.cli demo-data        fill a demo install with realistic data
     python -m app.cli monitor-once     run one monitoring pass and exit
@@ -208,6 +209,112 @@ def demo_data(args) -> None:
     )
 
 
+def doctor(args) -> None:
+    """Check every step of a local setup and say what is missing.
+
+    Written because the failure modes are indistinguishable from the browser:
+    a server that never started and a hostname that does not resolve both look
+    like "this site can't be reached".
+    """
+    import socket
+
+    from sqlalchemy import func, select
+
+    from app.netinfo import all_lan_ips, mdns_hostname
+
+    ok = "  [ok]  "
+    bad = "  [--]  "
+    warn = "  [!!]  "
+    problems: list[str] = []
+
+    print(f"\n{settings.app_name} setup check\n")
+
+    # --- Configuration -----------------------------------------------------
+    env_file = Path(".env")
+    if env_file.exists():
+        print(f"{ok}.env found")
+    else:
+        print(f"{bad}.env is missing")
+        problems.append("Run:  cp .env.development.example .env")
+
+    engine_name = settings.database_url.split(":")[0]
+    print(f"{ok}database configured: {engine_name}")
+
+    # --- Database ----------------------------------------------------------
+    try:
+        db = SessionLocal()
+        try:
+            from app.models import Alert, User, WorkSession
+
+            users = db.scalar(select(func.count(User.id)))
+            sessions = db.scalar(select(func.count(WorkSession.id)))
+            alerts = db.scalar(select(func.count(Alert.id)))
+        finally:
+            db.close()
+    except OperationalError as exc:
+        # "no such table" means the file is fine but init-db never ran; a
+        # refused connection means the database itself is not there.
+        if "no such table" in str(exc).lower() or "does not exist" in str(exc).lower():
+            print(f"{bad}database is empty — tables have not been created")
+        else:
+            print(f"{bad}cannot reach the database")
+        problems.append("Run:  python -m app.cli init-db")
+        users = sessions = alerts = None
+    except Exception as exc:  # noqa: BLE001
+        print(f"{bad}database reachable but unusable ({type(exc).__name__})")
+        problems.append("Run:  python -m app.cli init-db")
+        users = sessions = alerts = None
+    else:
+        print(f"{ok}database reachable")
+        if users:
+            print(f"{ok}{users} accounts, {sessions} sessions, {alerts} alerts")
+        else:
+            print(f"{warn}no accounts yet")
+            problems.append(
+                "Run:  python -m app.cli seed-demo && python -m app.cli demo-data"
+            )
+
+    # --- Network -----------------------------------------------------------
+    print()
+    addresses = all_lan_ips()
+    hostname = mdns_hostname()
+    port = args.port
+
+    if hostname:
+        print(f"{ok}this machine answers to: {hostname}")
+    if addresses:
+        print(f"{ok}network address: {addresses[0]}")
+    else:
+        print(f"{warn}no local network address — this machine may be offline")
+
+    # --- Is anything already listening? ------------------------------------
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe.settimeout(1.5)
+    listening = probe.connect_ex(("127.0.0.1", port)) == 0
+    probe.close()
+
+    if listening:
+        print(f"{ok}something is already listening on port {port}")
+    else:
+        print(f"{warn}nothing is listening on port {port} — the server is not running")
+        problems.append(f"Run:  python -m app.cli serve --port {port}")
+
+    # --- Verdict -----------------------------------------------------------
+    print()
+    if problems:
+        print("  Next steps, in order:\n")
+        for step in problems:
+            print(f"    {step}")
+        print()
+        return
+
+    url = f"http://{hostname}:{port}" if hostname else f"http://{addresses[0]}:{port}"
+    print("  Everything looks right. Open:\n")
+    print(f"    on this machine:  http://localhost:{port}")
+    print(f"    for your team:    {url}")
+    print()
+
+
 def serve(args) -> None:
     """Run the server so other machines on the same network can reach it.
 
@@ -354,6 +461,9 @@ def main() -> None:
     p.add_argument("--password", default="DemoPass2024")
     p.add_argument("--timezone", default="UTC")
 
+    p = sub.add_parser("doctor", help="Check the setup and report what is wrong")
+    p.add_argument("--port", type=int, default=8000)
+
     p = sub.add_parser(
         "serve", help="Run the server for everyone on this network"
     )
@@ -373,6 +483,7 @@ def main() -> None:
         "init-db": lambda a: init_db(),
         "create-admin": create_admin,
         "seed-demo": seed_demo,
+        "doctor": doctor,
         "serve": serve,
         "demo-data": demo_data,
         "monitor-once": monitor_once,

@@ -39,25 +39,40 @@ def _is_private(address: str) -> bool:
 def mdns_hostname() -> str | None:
     """This machine's .local name, if the network can resolve it.
 
-    macOS and Windows 10+ both answer mDNS queries for <hostname>.local, and
-    the name follows the machine when DHCP hands it a different address. For a
-    LAN deployment that matters: an agent configured with a raw IP breaks the
-    next time the lease changes, while one configured with a name does not.
+    macOS and Windows 10+ both answer mDNS queries for <name>.local, and the
+    name follows the machine when DHCP hands it a different address. For a LAN
+    deployment that matters: an agent configured with a raw IP stops reporting
+    the next time the lease changes, while one configured with a name does not.
+
+    On macOS the Bonjour name is not always what ``gethostname`` returns — DHCP
+    can set the latter independently — so the authoritative value is read from
+    ``scutil``. Returning a name nobody can resolve is worse than returning
+    none, so anything uncertain gives None and the caller falls back to the IP.
     """
+    import subprocess
     import sys
 
-    raw = socket.gethostname()
-    if not raw or raw in ("localhost", "localhost.localdomain"):
-        return None
+    if sys.platform == "darwin":
+        try:
+            result = subprocess.run(
+                ["scutil", "--get", "LocalHostName"],
+                capture_output=True, text=True, timeout=5, check=True,
+            )
+            name = result.stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            name = ""
+        if not name:
+            return None
+        return f"{name}.local".lower()
 
-    # macOS already reports the Bonjour name; elsewhere append .local.
-    name = raw if raw.endswith(".local") else f"{raw.split('.')[0]}.local"
+    if sys.platform == "win32":
+        raw = socket.gethostname()
+        if not raw or raw.lower().startswith("localhost"):
+            return None
+        return f"{raw.split('.')[0]}.local".lower()
 
-    # Only suggest it where the OS actually runs an mDNS responder.
-    if sys.platform not in ("darwin", "win32"):
-        return None
-
-    return name.lower()
+    # Elsewhere there is usually no mDNS responder running by default.
+    return None
 
 
 def all_lan_ips() -> list[str]:
