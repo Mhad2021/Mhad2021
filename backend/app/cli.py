@@ -13,8 +13,10 @@ import argparse
 import getpass
 import sys
 from datetime import time
+from pathlib import Path
 
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 
 from app.config import settings
 from app.core.security import hash_password, password_problems
@@ -22,6 +24,38 @@ from app.database import Base, SessionLocal, engine
 from app.models import Department, User, WorkSchedule
 from app.models.enums import Role
 from app.services.policy import ensure_global_policy
+
+
+def _explain_db_failure(exc: Exception) -> None:
+    """Turn a raw driver traceback into something actionable.
+
+    Forgetting the .env file is the most common first-run mistake, and the
+    built-in default points at PostgreSQL — so the error talks about port 5432
+    to someone who never asked for PostgreSQL.
+    """
+    env_file = Path(".env")
+    using_postgres = settings.database_url.startswith("postgresql")
+
+    print("\nCannot reach the database.", file=sys.stderr)
+    print(f"  Configured: {settings.database_url.split('@')[-1]}\n", file=sys.stderr)
+
+    if using_postgres and not env_file.exists():
+        print(
+            "There is no .env file here, so the PostgreSQL default is being used.\n"
+            "For a local trial you want SQLite instead:\n\n"
+            "    cp .env.development.example .env\n\n"
+            "then run this command again.",
+            file=sys.stderr,
+        )
+    elif using_postgres:
+        print(
+            "PostgreSQL is configured but not reachable. Either start it\n"
+            "(docker compose up -d db), or switch to SQLite for a local trial:\n\n"
+            "    cp .env.development.example .env",
+            file=sys.stderr,
+        )
+    else:
+        print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
 
 
 def init_db() -> None:
@@ -251,14 +285,22 @@ def main() -> None:
     sub.add_parser("check-config", help="Validate configuration and connectivity")
 
     args = parser.parse_args()
-    {
+    handlers = {
         "init-db": lambda a: init_db(),
         "create-admin": create_admin,
         "seed-demo": seed_demo,
         "demo-data": demo_data,
         "monitor-once": monitor_once,
         "check-config": check_config,
-    }[args.command](args)
+    }
+
+    try:
+        handlers[args.command](args)
+    except OperationalError as exc:
+        # A raw driver traceback about port 5432 is useless to someone who
+        # never asked for PostgreSQL. Say what is actually wrong.
+        _explain_db_failure(exc)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
