@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Attendance reports</h1>
+    <p>Clock-in and clock-out times, hours worked, active and idle time, breaks, late arrivals and early departures.</p>
+  </div>
+  <div class="page-actions">
+    {% if period == 'daily' %}
+      <a class="btn small secondary" href="/api/v1/reports/daily.csv?date={{ anchor }}{% if selected_department %}&department_id={{ selected_department }}{% endif %}">Export CSV</a>
+    {% else %}
+      <a class="btn small secondary" href="/api/v1/reports/period.csv?period={{ 'week' if period == 'weekly' else 'month' }}&date={{ anchor }}{% if selected_department %}&department_id={{ selected_department }}{% endif %}">Export CSV</a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="get" action="/reports" class="card" style="padding:14px 18px">
+  <div class="inline-form">
+    <div class="field"><label for="period">Period</label>
+      <select id="period" name="period" onchange="this.form.submit()">
+        <option value="daily" {% if period == 'daily' %}selected{% endif %}>Daily</option>
+        <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
+        <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
+      </select>
+    </div>
+    <div class="field"><label for="date">Date</label>
+      <input type="date" id="date" name="date" value="{{ anchor }}"></div>
+    <div class="field" style="min-width:190px"><label for="department_id">Department</label>
+      <select id="department_id" name="department_id">
+        <option value="">All departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if selected_department == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">Run report</button>
+  </div>
+</form>
+
+{% if period == 'daily' %}
+  <div class="stats">
+    <div class="stat green"><div class="label">Present</div><div class="value">{{ totals.present }}</div></div>
+    <div class="stat slate"><div class="label">Absent</div><div class="value">{{ totals.absent }}</div></div>
+    <div class="stat amber"><div class="label">Late</div><div class="value">{{ totals.late }}</div></div>
+    <div class="stat orange"><div class="label">Left early</div><div class="value">{{ totals.early }}</div></div>
+    <div class="stat"><div class="label">Hours worked</div><div class="value">{{ totals.worked_seconds | hours }}</div>
+      <div class="sub">{{ totals.active_seconds | hours }} active · {{ totals.idle_seconds | hours }} idle</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Daily attendance — {{ anchor.strftime('%A %d %B %Y') }}</h2></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Employee</th><th>Department</th><th>Clock in</th><th>Clock out</th>
+            <th>Scheduled</th><th class="num">Worked</th><th class="num">Active</th>
+            <th class="num">Idle</th><th class="num">Lunch</th><th class="num">Breaks</th>
+            <th class="num">Activity</th><th>Flags</th>
+          </tr></thead>
+          <tbody>
+          {% for row in rows %}
+            {% set d = row.to_dict() %}
+            <tr {% if row.is_absent %}style="opacity:.55"{% endif %}>
+              <td><a href="/reports/employee/{{ row.user_id }}"><strong>{{ row.full_name }}</strong></a>
+                <div class="small faint">{{ row.employee_code }}</div></td>
+              <td class="small muted">{{ row.department or '—' }}</td>
+              <td class="mono">{{ d.clock_in }}</td>
+              <td class="mono">{{ d.clock_out }}</td>
+              <td class="mono small muted">{{ d.scheduled_start }}–{{ d.scheduled_end }}</td>
+              <td class="num mono"><strong>{{ d.worked_hours }}</strong></td>
+              <td class="num mono">{{ d.active_hours }}</td>
+              <td class="num mono">{{ d.idle_hours }}</td>
+              <td class="num mono small">{{ d.lunch_display }}</td>
+              <td class="num mono small">{{ d.break_display }}</td>
+              <td class="num mono">{{ d.activity_rate }}%</td>
+              <td class="small">
+                {% if row.is_absent %}<span class="badge">absent</span>{% endif %}
+                {% if row.is_late %}<span class="badge bad">late {{ d.late_by }}</span>{% endif %}
+                {% if row.is_early_departure %}<span class="badge warn">left {{ d.early_by }} early</span>{% endif %}
+                {% if row.was_edited %}<span class="badge">edited</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  <div class="card">
+    <div class="card-head"><h2>{{ period | capitalize }} summary</h2>
+      <span class="hint">{{ start.strftime('%d %b') }} – {{ end.strftime('%d %b %Y') }}</span></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Employee</th><th>Department</th><th class="num">Days present</th>
+            <th class="num">Absent</th><th class="num">Late</th><th class="num">Left early</th>
+            <th class="num">Hours worked</th><th class="num">Active</th><th class="num">Idle</th>
+            <th class="num">Lunch</th><th class="num">Breaks</th><th class="num">Activity</th>
+            <th class="num">Avg/day</th>
+          </tr></thead>
+          <tbody>
+          {% for summary in summaries %}
+            {% set s = summary.to_dict() %}
+            <tr>
+              <td><a href="/reports/employee/{{ summary.user_id }}?start={{ start }}&end={{ end }}">
+                <strong>{{ summary.full_name }}</strong></a>
+                <div class="small faint">{{ summary.employee_code }}</div></td>
+              <td class="small muted">{{ summary.department or '—' }}</td>
+              <td class="num mono">{{ s.days_present }}</td>
+              <td class="num mono">{{ s.days_absent }}</td>
+              <td class="num mono">{{ s.late_days }}</td>
+              <td class="num mono">{{ s.early_departures }}</td>
+              <td class="num mono"><strong>{{ s.worked_hours }}</strong></td>
+              <td class="num mono">{{ s.active_hours }}</td>
+              <td class="num mono">{{ s.idle_hours }}</td>
+              <td class="num mono">{{ s.lunch_hours }}</td>
+              <td class="num mono">{{ s.break_hours }}</td>
+              <td class="num mono">{{ s.activity_rate }}%</td>
+              <td class="num mono">{{ s.avg_daily_hours }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>By department</h2></div>
+    <div class="card-body tight">
+      <table>
+        <thead><tr>
+          <th>Department</th><th class="num">People</th><th class="num">Hours worked</th>
+          <th class="num">Active</th><th class="num">Idle</th><th class="num">Activity</th>
+          <th class="num">Late days</th><th class="num">Absences</th><th class="num">Avg/person</th>
+        </tr></thead>
+        <tbody>
+        {% for dept in department_rollup %}
+          <tr>
+            <td><strong>{{ dept.department }}</strong></td>
+            <td class="num mono">{{ dept.employees }}</td>
+            <td class="num mono">{{ dept.worked_hours }}</td>
+            <td class="num mono">{{ dept.active_hours }}</td>
+            <td class="num mono">{{ dept.idle_hours }}</td>
+            <td class="num mono">{{ dept.activity_rate }}%</td>
+            <td class="num mono">{{ dept.late_days }}</td>
+            <td class="num mono">{{ dept.days_absent }}</td>
+            <td class="num mono">{{ dept.avg_hours_per_employee }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

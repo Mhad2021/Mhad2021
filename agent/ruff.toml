@@ -1,0 +1,18 @@
+line-length = 96
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",   # line length is handled by the formatter
+    "B008",   # FastAPI dependencies are function calls in defaults by design
+    "N818",   # exception names follow the domain, not the Error suffix rule
+    # The codebase uses Optional[X] and quoted forward refs consistently.
+    # Both are valid; a mixed style would be worse than either one.
+    "UP007",  # Optional[X] rather than X | None
+    "UP037",  # quoted annotations in TYPE_CHECKING blocks
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]
+"app/models/*" = ["F401"]

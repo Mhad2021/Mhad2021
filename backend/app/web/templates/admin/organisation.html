@@ -1,0 +1,109 @@
+{% extends "layouts/base.html" %}
+{% block title %}Teams{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Teams and schedules</h1>
+    <p>Departments group employees for reporting. Schedules define the normal working day so late arrivals and early departures are flagged automatically.</p></div>
+</div>
+
+<div class="clock-panel">
+  <div class="stack" style="margin:0">
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>Add a department</h2></div>
+      <div class="card-body">
+        <form data-api="/api/v1/departments" data-reload="true">
+          <div class="field"><label for="dept_name">Name</label>
+            <input type="text" id="dept_name" name="name" required></div>
+          <div class="field"><label for="dept_leader">Default team leader</label>
+            <select id="dept_leader" name="default_team_leader_id">
+              <option value="">None</option>
+              {% for leader in leaders %}<option value="{{ leader.id }}">{{ leader.full_name }}</option>{% endfor %}
+            </select>
+            <div class="help">Alerts go here when an employee has no leader of their own.</div></div>
+          <div class="field"><label for="dept_schedule">Default schedule</label>
+            <select id="dept_schedule" name="default_schedule_id">
+              <option value="">None</option>
+              {% for sched in schedules %}<option value="{{ sched.id }}">{{ sched.name }}</option>{% endfor %}
+            </select></div>
+          <div class="flex"><button type="submit" class="btn">Add department</button>
+            <span data-status class="small muted"></span></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>Departments</h2></div>
+      <div class="card-body tight">
+        {% if departments %}
+        <table>
+          <thead><tr><th>Name</th><th class="num">People</th><th>Default leader</th><th>Default schedule</th></tr></thead>
+          <tbody>
+          {% for dept in departments %}
+            <tr>
+              <td><strong>{{ dept.name }}</strong></td>
+              <td class="num mono">{{ member_counts.get(dept.id, 0) }}</td>
+              <td class="small">{{ dept.default_team_leader.full_name if dept.default_team_leader else '—' }}</td>
+              <td class="small">{{ dept.default_schedule.name if dept.default_schedule else '—' }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<div class="empty">No departments yet.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="stack" style="margin:0">
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>Add a work schedule</h2></div>
+      <div class="card-body">
+        <form data-api="/api/v1/schedules" data-reload="true">
+          <div class="field"><label for="sched_name">Name</label>
+            <input type="text" id="sched_name" name="name" placeholder="Standard office hours" required></div>
+          <div class="form-grid">
+            <div class="field"><label for="start_time">Start</label>
+              <input type="time" id="start_time" name="start_time" value="09:00" required></div>
+            <div class="field"><label for="end_time">End</label>
+              <input type="time" id="end_time" name="end_time" value="18:00" required></div>
+          </div>
+          <div class="field"><label for="sched_tz">Timezone</label>
+            <input type="text" id="sched_tz" name="timezone" value="{{ user.timezone }}" placeholder="Europe/London"></div>
+          <div class="field"><label for="workdays">Working days</label>
+            <input type="text" id="workdays" name="workdays" value="1111100" pattern="[01]{7}">
+            <div class="help">Seven digits, Monday to Sunday. 1111100 means Monday–Friday.</div></div>
+          <div class="form-grid">
+            <div class="field"><label for="grace_late">Late grace (min)</label>
+              <input type="number" id="grace_late" name="grace_late_minutes" value="10" min="0" max="240"></div>
+            <div class="field"><label for="grace_early">Early-leave grace (min)</label>
+              <input type="number" id="grace_early" name="grace_early_minutes" value="10" min="0" max="240"></div>
+          </div>
+          <div class="flex"><button type="submit" class="btn">Add schedule</button>
+            <span data-status class="small muted"></span></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>Schedules</h2></div>
+      <div class="card-body tight">
+        {% if schedules %}
+        <table>
+          <thead><tr><th>Name</th><th>Hours</th><th>Days</th><th>Grace</th></tr></thead>
+          <tbody>
+          {% for sched in schedules %}
+            <tr>
+              <td><strong>{{ sched.name }}</strong>
+                <div class="small faint">{{ sched.timezone }}</div></td>
+              <td class="mono small">{{ sched.start_time.strftime('%H:%M') }}–{{ sched.end_time.strftime('%H:%M') }}</td>
+              <td class="small mono">{{ sched.workdays }}</td>
+              <td class="small muted">{{ sched.grace_late_minutes }}m / {{ sched.grace_early_minutes }}m</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<div class="empty">No schedules yet.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

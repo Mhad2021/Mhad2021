@@ -1,0 +1,158 @@
+{% extends "layouts/base.html" %}
+{% block title %}Policy{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Monitoring policy</h1>
+    <p>Inactivity limits, break allowances and heartbeat timing. Leave the department blank to set the company-wide default.</p></div>
+</div>
+
+<form method="get" action="/admin/settings" class="card" style="padding:14px 18px">
+  <div class="inline-form">
+    <div class="field" style="min-width:240px"><label for="department_id">Editing policy for</label>
+      <select id="department_id" name="department_id" onchange="this.form.submit()">
+        <option value="">Company-wide default</option>
+        {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if selected_department == dept.id %}selected{% endif %}>{{ dept.name }} (override)</option>
+        {% endfor %}
+      </select>
+      <div class="help">A department override replaces only the values you change.</div>
+    </div>
+  </div>
+</form>
+
+<form data-api="/api/v1/settings/policy{% if selected_department %}?department_id={{ selected_department }}{% endif %}"
+      data-method="PATCH">
+  <div class="card">
+    <div class="card-head"><h2>Inactivity</h2>
+      <span class="hint">When a team leader gets told someone has gone quiet</span></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field"><label for="idle_threshold_seconds">Inactivity limit (seconds)</label>
+          <input type="number" id="idle_threshold_seconds" name="idle_threshold_seconds"
+                 value="{{ policy.idle_threshold_seconds }}" min="60" max="7200" step="30">
+          <div class="help">Default 600 (10 minutes). No keyboard or mouse input for this long, with no break
+            running, alerts the team leader.</div></div>
+        <div class="field"><label for="idle_realert_seconds">Repeat alert after (seconds)</label>
+          <input type="number" id="idle_realert_seconds" name="idle_realert_seconds"
+                 value="{{ policy.idle_realert_seconds }}" min="60" max="86400" step="60">
+          <div class="help">How long before a still-idle employee triggers a second alert.</div></div>
+        <div class="field"><label>Count a locked screen as inactive</label>
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center;margin-top:6px">
+            <input type="checkbox" name="treat_lock_as_idle" style="width:auto"
+                   {% if policy.treat_lock_as_idle %}checked{% endif %}> Yes, locking the workstation counts as idle
+          </label></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Breaks</h2>
+      <span class="hint">Alerts are suppressed while an approved break is running</span></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field"><label for="short_break_max_seconds">Short break length (seconds)</label>
+          <input type="number" id="short_break_max_seconds" name="short_break_max_seconds"
+                 value="{{ policy.short_break_max_seconds }}" min="60" max="7200" step="30">
+          <div class="help">Default 600 (10 minutes).</div></div>
+        <div class="field"><label for="short_breaks_per_day">Short breaks per day</label>
+          <input type="number" id="short_breaks_per_day" name="short_breaks_per_day"
+                 value="{{ policy.short_breaks_per_day }}" min="0" max="20"></div>
+        <div class="field"><label for="lunch_break_max_seconds">Lunch break length (seconds)</label>
+          <input type="number" id="lunch_break_max_seconds" name="lunch_break_max_seconds"
+                 value="{{ policy.lunch_break_max_seconds }}" min="300" max="14400" step="60">
+          <div class="help">Default 3600 (60 minutes).</div></div>
+        <div class="field"><label for="lunch_breaks_per_day">Lunch breaks per day</label>
+          <input type="number" id="lunch_breaks_per_day" name="lunch_breaks_per_day"
+                 value="{{ policy.lunch_breaks_per_day }}" min="0" max="5"></div>
+        <div class="field"><label for="break_overrun_grace_seconds">Overrun grace (seconds)</label>
+          <input type="number" id="break_overrun_grace_seconds" name="break_overrun_grace_seconds"
+                 value="{{ policy.break_overrun_grace_seconds }}" min="0" max="3600" step="30">
+          <div class="help">Extra time before an over-running break alerts the team leader.</div></div>
+        <div class="field"><label>Close breaks automatically</label>
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center;margin-top:6px">
+            <input type="checkbox" name="auto_end_expired_breaks" style="width:auto"
+                   {% if policy.auto_end_expired_breaks %}checked{% endif %}> End a break once its allowance runs out
+          </label></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Heartbeat and offline detection</h2>
+      <span class="hint">How a closed app, dead laptop or lost connection is caught</span></div>
+    <div class="card-body">
+      <div class="notice info">
+        The tracker sends a pulse on the interval below. If the server stops receiving it —
+        because the laptop was shut down, went to sleep, lost the network, or the app was closed —
+        the employee is marked offline and the team leader is alerted. An employee cannot appear
+        active by closing the app.
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="heartbeat_interval_seconds">Heartbeat interval (seconds)</label>
+          <input type="number" id="heartbeat_interval_seconds" name="heartbeat_interval_seconds"
+                 value="{{ policy.heartbeat_interval_seconds }}" min="30" max="60" step="5">
+          <div class="help">Between 30 and 60 seconds.</div></div>
+        <div class="field"><label for="heartbeat_grace_seconds">Mark offline after (seconds)</label>
+          <input type="number" id="heartbeat_grace_seconds" name="heartbeat_grace_seconds"
+                 value="{{ policy.heartbeat_grace_seconds }}" min="60" max="1800" step="15">
+          <div class="help">Must be more than twice the interval so one dropped packet is not treated as an outage.</div></div>
+        <div class="field"><label for="offline_alert_after_seconds">Alert team leader after (seconds)</label>
+          <input type="number" id="offline_alert_after_seconds" name="offline_alert_after_seconds"
+                 value="{{ policy.offline_alert_after_seconds }}" min="60" max="14400" step="60">
+          <div class="help">How long a laptop stays offline before the alert fires. Default 600.</div></div>
+        <div class="field"><label for="auto_clock_out_after_hours">Auto clock-out after (hours)</label>
+          <input type="number" id="auto_clock_out_after_hours" name="auto_clock_out_after_hours"
+                 value="{{ policy.auto_clock_out_after_hours }}" min="1" max="48">
+          <div class="help">Closes forgotten sessions at the last confirmed heartbeat and flags them for review.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Schedule alerts</h2>
+      <span class="hint">Only apply to employees who have a work schedule assigned</span></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_late_arrival" style="width:auto"
+                   {% if policy.alert_on_late_arrival %}checked{% endif %}>
+            Alert on late arrival
+          </label>
+          <div class="help">Sent when someone clocks in past their start time plus
+            the schedule's grace period. Once per person per day.</div>
+        </div>
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_early_departure" style="width:auto"
+                   {% if policy.alert_on_early_departure %}checked{% endif %}>
+            Alert on early departure
+          </label>
+          <div class="help">Sent when someone clocks out before the end of their
+            shift, allowing for the schedule's grace period.</div>
+        </div>
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_no_show" style="width:auto"
+                   {% if policy.alert_on_no_show %}checked{% endif %}>
+            Alert when someone never clocks in
+          </label>
+          <div class="help">Off by default. On a team with flexible hours this
+            fires constantly, and an alert everyone ignores devalues the ones
+            that matter.</div>
+        </div>
+        <div class="field"><label for="no_show_after_minutes">Wait before a no-show alert (minutes)</label>
+          <input type="number" id="no_show_after_minutes" name="no_show_after_minutes"
+                 value="{{ policy.no_show_after_minutes }}" min="5" max="720">
+          <div class="help">Measured from the scheduled start time. No alert is
+            sent once the working day has ended.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex" style="margin-bottom:24px">
+    <button type="submit" class="btn">Save policy</button>
+    <span data-status class="small muted"></span>
+  </div>
+</form>
+{% endblock %}

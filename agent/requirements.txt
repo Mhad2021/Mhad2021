@@ -1,0 +1,9 @@
+# The agent runs on the standard library alone. Everything below is optional
+# and improves the experience; none of it is required for tracking to work.
+
+# System tray icon (Windows, macOS, Linux)
+pystray==0.19.5
+pillow==11.1.0
+
+# Windows session, power and shutdown notifications
+pywin32==308; sys_platform == "win32"

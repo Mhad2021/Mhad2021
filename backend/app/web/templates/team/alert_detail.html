@@ -1,0 +1,63 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ alert.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ alert.title }}</h1>
+    <p><a href="/alerts">← Back to alerts</a></p>
+  </div>
+  <div class="page-actions">
+    {% if alert.is_open %}
+    <form data-api="/api/v1/alerts/{{ alert.id }}/acknowledge" data-reload="true">
+      <button type="submit" class="btn">Acknowledge</button>
+    </form>
+    {% endif %}
+    {% if alert.subject_id %}
+      <a href="/team/employee/{{ alert.subject_id }}" class="btn small secondary">View employee</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="notice {{ 'error' if alert.severity == 'critical' else 'warn' }}">{{ alert.message }}</div>
+
+<div class="card">
+  <div class="card-head"><h2>Details</h2></div>
+  <div class="card-body">
+    <table>
+      <tbody>
+        <tr><td class="muted" style="width:220px">Employee</td><td>{{ alert.subject_name }}</td></tr>
+        <tr><td class="muted">Sent to</td><td>{{ alert.recipient_name or 'No team leader assigned' }}</td></tr>
+        <tr><td class="muted">Type</td><td>{{ alert.type.replace('_', ' ') }}</td></tr>
+        <tr><td class="muted">Severity</td><td>{{ alert.severity }}</td></tr>
+        <tr><td class="muted">Triggered</td><td>{{ alert.triggered_display }}</td></tr>
+        {% if alert.acknowledged_at %}
+        <tr><td class="muted">Acknowledged</td><td>{{ alert.acknowledged_at }}</td></tr>
+        {% endif %}
+        {% if alert.resolved_at %}
+        <tr><td class="muted">Condition cleared</td><td>{{ alert.resolved_at }}</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Delivery</h2>
+    <span class="hint">Where this alert was sent</span></div>
+  <div class="card-body tight">
+    <table>
+      <thead><tr><th>Channel</th><th>Status</th><th class="num">Attempts</th><th>Error</th></tr></thead>
+      <tbody>
+        {% for delivery in alert.deliveries %}
+        <tr>
+          <td>{{ delivery.channel }}</td>
+          <td><span class="badge {{ 'good' if delivery.status == 'sent' else ('bad' if delivery.status == 'failed' else '') }}">{{ delivery.status }}</span></td>
+          <td class="num">{{ delivery.attempts }}</td>
+          <td class="small muted">{{ delivery.error or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

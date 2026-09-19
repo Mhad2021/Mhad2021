@@ -1,0 +1,25 @@
+{# Employee's own status card. Polled every few seconds. #}
+<div class="status-big">
+  <div class="emoji">{{ status.emoji }}</div>
+  <div class="state">{{ status.label }}</div>
+  <div class="since">
+    {% if status.since_ts %}for <span data-since="{{ status.since_ts }}">{{ status.duration_display }}</span>{% else %}&nbsp;{% endif %}
+  </div>
+  <div class="detail">{{ status.detail }}</div>
+  {% if status.warnings %}
+    {% for warning in status.warnings %}
+      <div class="badge warn" style="margin-top:8px">{{ warning }}</div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="metric-grid">
+  <div><div class="label">Clocked in</div>
+    <div class="value">{{ status.clock_in_display or '—' }}</div></div>
+  <div><div class="label">Worked today</div>
+    <div class="value">{{ status.worked_display }}</div></div>
+  <div><div class="label">Active</div>
+    <div class="value" style="color:var(--green)">{{ status.active_display }}</div></div>
+  <div><div class="label">Idle</div>
+    <div class="value" style="color:var(--orange)">{{ status.idle_display }}</div></div>
+</div>

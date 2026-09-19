@@ -1,0 +1,86 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ employee.full_name }}{% endblock %}
+{% block content %}
+{% set row = detail.employee %}
+<div class="page-head">
+  <div>
+    <h1>{{ employee.full_name }}</h1>
+    <p>{{ employee.employee_code }}
+      {% if employee.department %} · {{ employee.department.name }}{% endif %}
+      {% if employee.team_leader %} · reports to {{ employee.team_leader.full_name }}{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <span class="pill {{ row.colour }}">{{ row.emoji }} {{ row.label }} · {{ row.duration_display }}</span>
+    <a href="/reports/employee/{{ employee.id }}" class="btn small secondary">Full report</a>
+  </div>
+</div>
+
+{% if detail.open_alerts %}
+  {% for alert in detail.open_alerts %}
+    <div class="notice {{ 'error' if alert.severity == 'critical' else 'warn' }}">
+      <div><strong>{{ alert.title }}</strong> — {{ alert.message }}
+        <div class="small" style="margin-top:4px;opacity:.8">{{ alert.at }} ·
+          <a href="/alerts/{{ alert.id }}">Open alert</a></div></div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="stats">
+  <div class="stat"><div class="label">Clocked in</div>
+    <div class="value" style="font-size:20px">{{ row.clock_in_display or '—' }}</div>
+    {% if row.is_late %}<div class="sub" style="color:var(--red)">Late arrival</div>{% endif %}</div>
+  <div class="stat"><div class="label">Worked today</div><div class="value">{{ row.worked_display }}</div></div>
+  <div class="stat green"><div class="label">Active</div><div class="value">{{ row.active_display }}</div></div>
+  <div class="stat orange"><div class="label">Idle</div><div class="value">{{ row.idle_display }}</div></div>
+  <div class="stat"><div class="label">This week</div><div class="value">{{ week.worked_seconds | hours }}</div>
+    <div class="sub">{{ week.days_present }} days present</div></div>
+</div>
+
+<div class="clock-panel">
+  <div class="card" style="margin:0">
+    <div class="card-head"><h2>Today's timeline</h2>
+      <span class="hint">State changes in order</span></div>
+    <div class="card-body tight">
+      {% if detail.timeline %}
+      <table>
+        <thead><tr><th>State</th><th>From</th><th>To</th><th class="num">Duration</th></tr></thead>
+        <tbody>
+        {% for slot in detail.timeline %}
+          <tr>
+            <td><span class="pill {{ 'green' if slot.state == 'active' else ('amber' if 'break' in slot.state else ('red' if slot.state == 'offline' else 'orange')) }}">
+              {{ slot.state.replace('_', ' ') }}</span></td>
+            <td class="mono small">{{ slot['from'] }}</td>
+            <td class="mono small">{{ slot.to }}</td>
+            <td class="num mono">{{ slot.duration }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">No session open today.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card" style="margin:0">
+    <div class="card-head"><h2>Recent events</h2>
+      <span class="hint">Full audit trail</span></div>
+    <div class="card-body">
+      {% if detail.events %}
+      <ul class="timeline">
+        {% for event in detail.events %}
+        <li>
+          <span class="time mono">{{ event.at }}</span>
+          <span class="what">{{ event.message }}
+            {% if event.source != 'agent' %}<span class="badge">{{ event.source }}</span>{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty">No events recorded.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

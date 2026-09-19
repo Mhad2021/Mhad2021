@@ -1,0 +1,104 @@
+{% extends "layouts/base.html" %}
+{% block title %}What is recorded{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>What this system records</h1>
+    <p>A plain-language description of every piece of data {{ app_name }} collects from your work laptop.</p></div>
+</div>
+
+<div class="notice ok">
+  <div><strong>In one line:</strong> it records when you are working and whether your
+  computer is being used — not <em>what</em> you are doing on it.</div>
+</div>
+
+<div class="clock-panel">
+  <div class="card" style="margin:0">
+    <div class="card-head"><h2>✅ What is collected</h2></div>
+    <div class="card-body">
+      <ul style="margin:0;padding-left:20px;line-height:1.9">
+        <li>The time you clock in and clock out</li>
+        <li>Approved breaks you start and end, and how long they lasted</li>
+        <li>Whether your computer has had keyboard or mouse input recently —
+          <strong>a number of seconds only</strong></li>
+        <li>Whether your workstation is locked</li>
+        <li>Whether your laptop is reachable: on, asleep, shut down or disconnected</li>
+        <li>Your computer's name, operating system version and the tracker version</li>
+        <li>Your work schedule, so late arrivals and early departures can be identified</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin:0">
+    <div class="card-head"><h2>🚫 What is never collected</h2></div>
+    <div class="card-body">
+      <ul style="margin:0;padding-left:20px;line-height:1.9">
+        <li><strong>Keystroke content.</strong> The tracker asks the operating system how long
+          it has been since the last input. It never reads what was typed.</li>
+        <li><strong>Passwords</strong> of any kind</li>
+        <li><strong>Messages, emails or chat content</strong></li>
+        <li><strong>Screenshots or screen recordings</strong></li>
+        <li><strong>Webcam or microphone</strong> — the tracker does not request access</li>
+        <li><strong>Personal files or documents</strong></li>
+        <li><strong>Browsing history or the websites you visit</strong></li>
+        <li><strong>Which applications you have open</strong></li>
+        <li><strong>Your location</strong></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>When your team leader is notified</h2></div>
+  <div class="card-body">
+    <table>
+      <tbody>
+        <tr><td class="muted" style="width:340px">Your computer has no keyboard or mouse input for</td>
+            <td><strong>{{ policy.idle_threshold_seconds | duration }}</strong>, and no break is running</td></tr>
+        <tr><td class="muted">A short break runs longer than</td>
+            <td><strong>{{ policy.short_break_max_seconds | duration }}</strong>
+              (plus {{ policy.break_overrun_grace_seconds | duration }} grace)</td></tr>
+        <tr><td class="muted">A lunch break runs longer than</td>
+            <td><strong>{{ policy.lunch_break_max_seconds | duration }}</strong>
+              (plus {{ policy.break_overrun_grace_seconds | duration }} grace)</td></tr>
+        <tr><td class="muted">Your laptop stops reporting for</td>
+            <td><strong>{{ policy.offline_alert_after_seconds | duration }}</strong>
+              while you are still clocked in</td></tr>
+      </tbody>
+    </table>
+    <div class="notice info" style="margin-top:16px;margin-bottom:0">
+      <div><strong>Breaks pause the alerts.</strong> While an approved lunch or short break is
+      running, no inactivity alert is sent. Use the break buttons in the tracker and you will
+      not be flagged for stepping away.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>How it works</h2></div>
+  <div class="card-body" style="line-height:1.7">
+    <p style="margin-top:0">The tracker sends a short status message to the server every
+    {{ policy.heartbeat_interval_seconds }} seconds while you are clocked in. That message
+    contains your idle time in seconds, whether the screen is locked, and nothing else about
+    your activity.</p>
+    <p>If those messages stop arriving for {{ policy.heartbeat_grace_seconds | duration }} —
+    because the laptop was shut down, lost its connection, went to sleep, or the tracker was
+    closed — the server records that your computer went offline and, after
+    {{ policy.offline_alert_after_seconds | duration }}, notifies your team leader.</p>
+    <p style="margin-bottom:0">You can see everything recorded about you on your
+    <a href="/me">My day</a> page. If something looks wrong, ask your manager to correct it —
+    corrections are logged with the original value kept.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Your rights</h2></div>
+  <div class="card-body" style="line-height:1.7">
+    <p style="margin-top:0">Depending on where you work, you may have a legal right to see the
+    data held about you, to have inaccurate records corrected, and to be told the purpose of the
+    monitoring before it starts.</p>
+    <p style="margin-bottom:0">This page is the notice of that purpose: managing attendance and
+    working hours. If you have questions about how your employer uses it, contact your HR or
+    people team — not the system administrator.</p>
+  </div>
+</div>
+{% endblock %}
