@@ -8,9 +8,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import select
 
 from app.api.deps import AdminUser, DbSession, ManagerUser, client_ip
-from app.core.crypto import encrypt_config, decrypt_config, redact
+from app.core.crypto import decrypt_config, encrypt_config, redact
 from app.core.timeutil import to_local
-from app.models import AuditLog, Department, NotificationChannel, PolicySettings
+from app.models import Department, NotificationChannel, PolicySettings
 from app.models.enums import AlertType, ChannelType
 from app.schemas.admin import (
     ChannelCreate,
@@ -22,8 +22,8 @@ from app.schemas.admin import (
 from app.schemas.common import ActionResult
 from app.services import audit
 from app.services.notifications import engine as notification_engine
-from app.services.policy import ensure_global_policy, get_policy_for_department
 from app.services.notifications.providers import build_provider
+from app.services.policy import ensure_global_policy, get_policy_for_department
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["settings"])

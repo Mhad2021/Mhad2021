@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Optional
+from datetime import UTC, datetime
+from typing import Any, Optional
 
 from tracker.api_client import ApiClient, ApiError
 from tracker.config import AgentConfig
@@ -25,7 +26,7 @@ OFFLINE_AFTER_FAILURES = 2
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 @dataclass
@@ -207,7 +208,7 @@ class TrackerEngine:
         with self._lock:
             self.state.connected = True
             self.state.last_error = None
-            self.state.last_heartbeat_at = datetime.now(timezone.utc)
+            self.state.last_heartbeat_at = datetime.now(UTC)
             self.state.state = response.get("state", "clocked_out")
             self.state.detail = response.get("detail") or ""
             self.state.clocked_in = bool(response.get("clocked_in"))

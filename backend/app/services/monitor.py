@@ -7,14 +7,14 @@ by being closed — that is precisely what a missing heartbeat looks like here.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.timeutil import ensure_aware, seconds_between, utcnow
-from app.models import BreakPeriod, User, WorkSession
+from app.models import User, WorkSession
 from app.models.enums import (
     ActivityState,
     AlertType,

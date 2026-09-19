@@ -16,7 +16,7 @@ from app.core.timeutil import (
     seconds_between,
     utcnow,
 )
-from app.models import BreakPeriod, Device, User, WorkSession, WorkSchedule
+from app.models import BreakPeriod, Device, User, WorkSchedule, WorkSession
 from app.models.enums import (
     ActivityState,
     BreakEndReason,

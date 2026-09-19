@@ -118,13 +118,11 @@ def seed_demo(args) -> None:
         db.flush()
 
         leader.department_id = support.id
-        for index, (code, username, name) in enumerate(
-            [
-                ("EMP-001", "john.doe", "John Doe"),
-                ("EMP-002", "sara.khan", "Sara Khan"),
-                ("EMP-003", "marco.rossi", "Marco Rossi"),
-            ]
-        ):
+        for code, username, name in [
+            ("EMP-001", "john.doe", "John Doe"),
+            ("EMP-002", "sara.khan", "Sara Khan"),
+            ("EMP-003", "marco.rossi", "Marco Rossi"),
+        ]:
             db.add(
                 User(
                     employee_code=code, username=username,
@@ -208,8 +206,11 @@ def main() -> None:
     sub.add_parser("init-db", help="Create tables directly (development only)")
 
     p = sub.add_parser("create-admin", help="Create the first administrator")
-    p.add_argument("--username"); p.add_argument("--email"); p.add_argument("--name")
-    p.add_argument("--password"); p.add_argument("--code")
+    p.add_argument("--username")
+    p.add_argument("--email")
+    p.add_argument("--name")
+    p.add_argument("--password")
+    p.add_argument("--code")
     p.add_argument("--timezone", default="UTC")
 
     p = sub.add_parser("seed-demo", help="Create a demo organisation")

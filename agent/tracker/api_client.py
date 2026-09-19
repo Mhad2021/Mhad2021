@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import logging
-import socket
 import ssl
 import urllib.error
 import urllib.request
@@ -78,7 +77,7 @@ class ApiClient:
                 logger.warning("Server error %s on %s: %s", exc.code, path, detail)
             raise ApiError(detail, status=exc.code) from exc
 
-        except (urllib.error.URLError, socket.timeout, ssl.SSLError, OSError) as exc:
+        except (TimeoutError, urllib.error.URLError, ssl.SSLError, OSError) as exc:
             raise ApiError(f"Cannot reach the server: {exc}", status=None) from exc
 
         except json.JSONDecodeError as exc:

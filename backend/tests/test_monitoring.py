@@ -11,7 +11,7 @@ from datetime import timedelta
 import pytest
 
 from app.core.timeutil import utcnow
-from app.models import Alert, ActivityEvent, NotificationDelivery
+from app.models import ActivityEvent, Alert, NotificationDelivery
 from app.models.enums import (
     ActivityState,
     AlertType,
@@ -19,7 +19,7 @@ from app.models.enums import (
     BreakType,
     EventType,
 )
-from app.services import activity, agent_session, alerts, attendance, monitor
+from app.services import agent_session, attendance, monitor
 
 
 def _alerts_of(db, alert_type: AlertType) -> list[Alert]:

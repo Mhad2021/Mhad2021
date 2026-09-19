@@ -22,10 +22,12 @@ from app.core.timeutil import utcnow
 from app.models import RefreshToken, User
 from app.schemas.auth import (
     ChangePasswordRequest,
-    CurrentUser as CurrentUserOut,
     LoginRequest,
     RefreshRequest,
     TokenPair,
+)
+from app.schemas.auth import (
+    CurrentUser as CurrentUserOut,
 )
 from app.schemas.common import ActionResult
 from app.services import audit

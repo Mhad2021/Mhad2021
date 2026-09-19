@@ -6,7 +6,6 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 
 from app.api.deps import AdminUser, CurrentUser, DbSession, ManagerUser, client_ip
 from app.core.security import (

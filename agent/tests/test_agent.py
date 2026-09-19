@@ -1,8 +1,6 @@
 """Agent-side unit tests: config, buffering and the engine's state handling."""
 from __future__ import annotations
 
-import json
-import os
 import sys
 import tempfile
 from pathlib import Path

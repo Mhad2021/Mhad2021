@@ -6,15 +6,15 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentUser, DbSession, ManagerUser, get_viewable_employee
 from app.config import settings
 from app.core.timeutil import ensure_aware, humanize_duration, to_local, utcnow
 from app.database import SessionLocal
-from app.models import ActivityEvent, WorkSession
-from app.services import activity, alerts, attendance, presence
+from app.models import ActivityEvent
+from app.services import alerts, attendance, presence
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/live", tags=["live"])

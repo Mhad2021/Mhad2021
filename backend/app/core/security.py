@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 
 import bcrypt
@@ -110,7 +110,7 @@ def create_access_token(
     extra: Optional[dict[str, Any]] = None,
     ttl_minutes: Optional[int] = None,
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     ttl = ttl_minutes or settings.access_token_ttl_minutes
     payload: dict[str, Any] = {
         "sub": str(subject),
@@ -137,8 +137,8 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 def refresh_token_expiry() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_ttl_days)
+    return datetime.now(UTC) + timedelta(days=settings.refresh_token_ttl_days)
 
 
 def enrollment_code_expiry(hours: int = 72) -> datetime:
-    return datetime.now(timezone.utc) + timedelta(hours=hours)
+    return datetime.now(UTC) + timedelta(hours=hours)

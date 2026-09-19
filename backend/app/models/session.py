@@ -1,19 +1,21 @@
 """Work sessions, breaks, activity intervals and the event timeline."""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
-    Enum as SAEnum,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -119,7 +121,7 @@ class WorkSession(Base, TimestampMixin):
     @property
     def total_seconds(self) -> int:
         """Wall-clock span of the session, to now while it is still open."""
-        end = self.clock_out_at or datetime.now(timezone.utc)
+        end = self.clock_out_at or datetime.now(UTC)
         return max(0, int((end - self.clock_in_at).total_seconds()))
 
     @property

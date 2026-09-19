@@ -1,11 +1,12 @@
 """Clock in/out, breaks and time accounting."""
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
 
 from app.core.timeutil import utcnow
+from app.models import ActivityEvent
 from app.models.enums import (
     ActivityState,
     BreakEndReason,
@@ -13,10 +14,8 @@ from app.models.enums import (
     ClockOutReason,
     EventType,
 )
-from app.models import ActivityEvent
 from app.services import activity, attendance
 from app.services.attendance import AttendanceError
-from app.services.policy import get_policy
 
 
 def test_clock_in_opens_a_session_and_an_active_interval(db, employee, policy, device):
@@ -67,7 +66,7 @@ def _last_workday() -> "date":
 def test_late_arrival_is_flagged_against_the_schedule(db, employee, policy, schedule):
     # Schedule starts 09:00 UTC with 10 minutes' grace; arrive at 09:25.
     today = _last_workday()
-    late = datetime.combine(today, time(9, 25), tzinfo=timezone.utc)
+    late = datetime.combine(today, time(9, 25), tzinfo=UTC)
 
     session = attendance.clock_in(db, employee, at=late)
     db.commit()
@@ -79,7 +78,7 @@ def test_late_arrival_is_flagged_against_the_schedule(db, employee, policy, sche
 def test_arrival_within_grace_is_not_late(db, employee, policy, schedule):
     today = _last_workday()
     session = attendance.clock_in(
-        db, employee, at=datetime.combine(today, time(9, 8), tzinfo=timezone.utc)
+        db, employee, at=datetime.combine(today, time(9, 8), tzinfo=UTC)
     )
     db.commit()
     assert not session.is_late_arrival
@@ -88,12 +87,12 @@ def test_arrival_within_grace_is_not_late(db, employee, policy, schedule):
 def test_early_departure_is_flagged(db, employee, policy, schedule):
     today = _last_workday()
     session = attendance.clock_in(
-        db, employee, at=datetime.combine(today, time(9, 0), tzinfo=timezone.utc)
+        db, employee, at=datetime.combine(today, time(9, 0), tzinfo=UTC)
     )
     db.commit()
 
     attendance.clock_out(
-        db, session, at=datetime.combine(today, time(16, 30), tzinfo=timezone.utc)
+        db, session, at=datetime.combine(today, time(16, 30), tzinfo=UTC)
     )
     db.commit()
 

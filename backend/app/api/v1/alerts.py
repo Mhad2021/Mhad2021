@@ -8,11 +8,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from app.api.deps import CurrentUser, DbSession, ManagerUser, client_ip
-from app.core.timeutil import to_local, utcnow
-from app.models import Alert, NotificationDelivery, User
+from app.core.timeutil import to_local
+from app.models import Alert, NotificationDelivery
 from app.models.enums import AlertSeverity, AlertType, Role
 from app.schemas.common import ActionResult
-from app.services import alerts as alert_service, audit
+from app.services import alerts as alert_service
+from app.services import audit
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 

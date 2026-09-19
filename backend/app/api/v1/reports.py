@@ -16,8 +16,14 @@ from app.api.deps import (
     client_ip,
     get_viewable_employee,
 )
-from app.core.timeutil import ensure_aware, local_date, month_bounds, to_local, utcnow, week_bounds
-from app.models import ActivityEvent, BreakPeriod, User, WorkSession
+from app.core.timeutil import (
+    ensure_aware,
+    local_date,
+    to_local,
+    utcnow,
+    week_bounds,
+)
+from app.models import User, WorkSession
 from app.models.enums import ClockOutReason, EventSource, EventType
 from app.schemas.admin import ManualSessionCreate, SessionAdjust
 from app.services import activity, audit, reporting

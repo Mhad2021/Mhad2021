@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from app.api.deps import get_db
 from app.core.security import generate_token, hash_token
 from app.main import app
-from app.models import Device
 
 
 @pytest.fixture

@@ -5,10 +5,10 @@ around 20MB rather than 120MB, which matters when it is pushed to 200 laptops.
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
-from typing import Optional
+from tkinter import messagebox
 
 from tracker.config import APP_NAME, AgentConfig
 from tracker.engine import AgentState, TrackerEngine
@@ -211,10 +211,9 @@ class TrackerWindow:
     # -- Rendering ----------------------------------------------------------
     def _on_state(self, state: AgentState) -> None:
         # Called from the heartbeat thread; Tk must only be touched on its own.
-        try:
+        # The window may already be torn down; tracking continues regardless.
+        with contextlib.suppress(RuntimeError):
             self.root.after(0, lambda: self._render(state))
-        except RuntimeError:
-            pass  # window already torn down
 
     def _render(self, state: AgentState) -> None:
         colour = STATE_COLOURS.get(state.state, MUTED)

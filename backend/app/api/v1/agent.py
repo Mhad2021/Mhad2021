@@ -10,7 +10,6 @@ The agent authenticates with a device token and reports only:
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
@@ -19,7 +18,6 @@ from app.api.deps import Agent, DbSession, client_ip
 from app.core.security import (
     generate_token,
     hash_token,
-    verify_token_hash,
 )
 from app.core.timeutil import ensure_aware, utcnow
 from app.models import Device, EnrollmentCode, User

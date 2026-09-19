@@ -1,11 +1,11 @@
 """Daily, weekly and monthly reporting."""
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
 
-from app.core.timeutil import utcnow, week_bounds
+from app.core.timeutil import utcnow
 from app.models.enums import BreakType
 from app.services import attendance, reporting
 
@@ -20,8 +20,8 @@ def _workday(offset_days: int = 0) -> date:
 def _completed_day(db, employee, day: date, start=time(9, 0), end=time(17, 30),
                    lunch_minutes: int = 45):
     """Record one finished working day for the employee."""
-    clock_in = datetime.combine(day, start, tzinfo=timezone.utc)
-    clock_out = datetime.combine(day, end, tzinfo=timezone.utc)
+    clock_in = datetime.combine(day, start, tzinfo=UTC)
+    clock_out = datetime.combine(day, end, tzinfo=UTC)
 
     session = attendance.clock_in(db, employee, at=clock_in)
     db.commit()
@@ -71,13 +71,13 @@ def test_late_arrival_and_early_departure_show_in_the_row(db, employee, policy, 
 
 def test_multiple_sessions_in_one_day_are_combined(db, employee, policy, schedule):
     day = _workday()
-    morning_in = datetime.combine(day, time(9, 0), tzinfo=timezone.utc)
+    morning_in = datetime.combine(day, time(9, 0), tzinfo=UTC)
     session = attendance.clock_in(db, employee, at=morning_in)
     db.commit()
     attendance.clock_out(db, session, at=morning_in + timedelta(hours=3))
     db.commit()
 
-    afternoon_in = datetime.combine(day, time(14, 0), tzinfo=timezone.utc)
+    afternoon_in = datetime.combine(day, time(14, 0), tzinfo=UTC)
     session = attendance.clock_in(db, employee, at=afternoon_in)
     db.commit()
     attendance.clock_out(db, session, at=afternoon_in + timedelta(hours=4))
@@ -167,7 +167,6 @@ def test_period_csv_exports_the_summary(db, employee, policy, schedule):
 def test_scope_limits_what_a_team_leader_can_report_on(
     db, employee, leader, policy, schedule
 ):
-    from app.models.enums import Role
 
     visible = reporting.scope_users(db, leader)
     assert employee.id in [u.id for u in visible]

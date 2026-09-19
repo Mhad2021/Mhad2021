@@ -1,12 +1,12 @@
 """Timezone helpers. Everything is stored in UTC and rendered in local time."""
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def get_zone(name: str | None) -> ZoneInfo:
@@ -19,7 +19,7 @@ def get_zone(name: str | None) -> ZoneInfo:
 def ensure_aware(value: datetime) -> datetime:
     """Treat naive datetimes as UTC (SQLite loses tzinfo on round-trip)."""
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
+        return value.replace(tzinfo=UTC)
     return value
 
 
@@ -34,7 +34,7 @@ def local_date(value: datetime, tz_name: str | None) -> date:
 def combine_local(day: date, at: time, tz_name: str | None) -> datetime:
     """Build an aware UTC datetime from a local calendar date and wall time."""
     zone = get_zone(tz_name)
-    return datetime.combine(day, at, tzinfo=zone).astimezone(timezone.utc)
+    return datetime.combine(day, at, tzinfo=zone).astimezone(UTC)
 
 
 def seconds_between(start: datetime, end: datetime | None = None) -> int:

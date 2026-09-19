@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import threading
 import tkinter as tk
-from tkinter import messagebox
 from typing import Optional
 
 from tracker.api_client import ApiClient, ApiError
@@ -248,7 +247,10 @@ class SetupWindow:
             try:
                 result = call()
             except ApiError as exc:
-                self.root.after(0, lambda: self._on_failure(exc.message))
+                # Bind the message now: `exc` is unbound once the except block
+                # ends, and the callback runs later on the Tk thread.
+                message = exc.message
+                self.root.after(0, lambda: self._on_failure(message))
                 return
             self.root.after(0, lambda: self._on_success(result))
 

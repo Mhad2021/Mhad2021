@@ -6,9 +6,11 @@ dependency can never silently stop attendance recording.
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import threading
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from tracker.config import APP_NAME
 from tracker.engine import AgentState, TrackerEngine
@@ -154,7 +156,5 @@ class TrayIcon:
 
     def stop(self) -> None:
         if self.icon is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self.icon.stop()
-            except Exception:  # noqa: BLE001
-                pass

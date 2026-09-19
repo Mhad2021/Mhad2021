@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import sys
 import threading
-from typing import Callable
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,6 @@ class SessionEventListener:
 
     def _pump(self) -> None:  # pragma: no cover - Windows-only message loop
         import win32api
-        import win32con
         import win32gui
         import win32ts
 

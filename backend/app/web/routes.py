@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
@@ -21,7 +21,6 @@ from app.api.deps import (
     DbSession,
     can_view_employee,
     client_ip,
-    get_current_user,
     require_admin,
     require_manager,
 )
@@ -34,9 +33,10 @@ from app.core.timeutil import (
     utcnow,
     week_bounds,
 )
-from app.models import Alert, Department, NotificationChannel, User, WorkSchedule
-from app.models.enums import PresenceState, Role
-from app.services import alerts as alert_service, audit, directory, presence, reporting
+from app.models import Department, User, WorkSchedule
+from app.models.enums import PresenceState
+from app.services import alerts as alert_service
+from app.services import audit, directory, presence, reporting
 from app.services.policy import get_policy_for_department
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ def login_submit(
     password: str = Form(...),
     next: str = Form(default="/"),
 ) -> Response:
-    from app.api.v1.auth import authenticate, _issue_tokens
+    from app.api.v1.auth import _issue_tokens, authenticate
 
     try:
         user = authenticate(db, username, password, request)

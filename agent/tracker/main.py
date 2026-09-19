@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import logging.handlers
 import signal
@@ -81,16 +82,13 @@ def run_gui(config: AgentConfig) -> int:
         logger.info("Received signal %s", signum)
         engine.stop(f"received signal {signum}")
         tray.stop()
-        try:
+        with contextlib.suppress(Exception):
             window.root.quit()
-        except Exception:  # noqa: BLE001
-            pass
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
+        # Signal handling is not available on every platform or thread.
+        with contextlib.suppress(ValueError, OSError):
             signal.signal(sig, handle_signal)
-        except (ValueError, OSError):
-            pass  # not available on every platform/thread
 
     autostart.ensure_enabled()
     engine.start()
