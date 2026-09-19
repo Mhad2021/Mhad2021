@@ -262,13 +262,91 @@ def check_forgotten_session(
 
 
 # --------------------------------------------------------------------------- #
+# 5. Scheduled to start, but never clocked in
+# --------------------------------------------------------------------------- #
+def check_no_shows(db: Session, now: datetime) -> int:
+    """Alert on employees who are well past their start time with no session.
+
+    Off by default: on a team with flexible hours this fires constantly, and an
+    alert everybody ignores devalues the ones that matter.
+    """
+    from app.models import User, WorkSession
+    from app.models.enums import Role
+    from app.services.attendance import resolve_schedule, schedule_window
+
+    cache: dict[Optional[int], EffectivePolicy] = {}
+    raised = 0
+
+    employees = db.scalars(
+        select(User)
+        .options(
+            selectinload(User.department),
+            selectinload(User.team_leader),
+            selectinload(User.schedule),
+        )
+        .where(User.is_active.is_(True), User.role == Role.EMPLOYEE)
+    )
+
+    for employee in employees:
+        policy = _policy_for(db, employee, cache)
+        if not policy.alert_on_no_show:
+            continue
+
+        schedule = resolve_schedule(db, employee)
+        if schedule is None:
+            continue
+
+        from app.core.timeutil import local_date
+
+        work_date = local_date(now, employee.timezone)
+        window = schedule_window(db, employee, work_date)
+        if not window.is_workday or window.start_at is None:
+            continue
+
+        overdue = seconds_between(window.start_at, now)
+        if overdue < policy.no_show_after_minutes * 60:
+            continue
+        # Stop alerting once the working day is over; the daily report covers it.
+        if window.end_at is not None and now > ensure_aware(window.end_at):
+            continue
+
+        has_session = db.scalar(
+            select(WorkSession.id).where(
+                WorkSession.user_id == employee.id,
+                WorkSession.work_date == work_date,
+            )
+        )
+        if has_session is not None:
+            continue
+
+        created = alerts.raise_alert(
+            db,
+            employee=employee,
+            alert_type=AlertType.NO_SHOW,
+            dedup_key=f"no_show:{employee.id}:{work_date.isoformat()}",
+            context={
+                "scheduled_start": ensure_aware(window.start_at).isoformat(),
+                "overdue_seconds": overdue,
+            },
+            triggered_at=now,
+        )
+        if created is not None:
+            raised += 1
+
+    return raised
+
+
+# --------------------------------------------------------------------------- #
 # Tick
 # --------------------------------------------------------------------------- #
 def run_tick(db: Session, now: Optional[datetime] = None) -> dict[str, int]:
     """One monitoring pass over every open session."""
     now = now or utcnow()
     cache: dict[Optional[int], EffectivePolicy] = {}
-    stats = {"sessions": 0, "offline": 0, "idle": 0, "overrun": 0, "auto_closed": 0}
+    stats = {
+        "sessions": 0, "offline": 0, "idle": 0,
+        "overrun": 0, "auto_closed": 0, "no_shows": 0,
+    }
 
     for session in _open_sessions(db):
         if session.user is None or not session.user.is_active:
@@ -296,6 +374,13 @@ def run_tick(db: Session, now: Optional[datetime] = None) -> dict[str, int]:
             continue
 
         db.commit()
+
+    try:
+        stats["no_shows"] = check_no_shows(db, now)
+        db.commit()
+    except Exception:  # noqa: BLE001 - never let this stop the session checks
+        logger.exception("No-show check failed")
+        db.rollback()
 
     return stats
 

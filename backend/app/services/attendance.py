@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.timeutil import (
     combine_local,
     ensure_aware,
+    get_zone,
     local_date,
     seconds_between,
     utcnow,
@@ -19,6 +20,7 @@ from app.core.timeutil import (
 from app.models import BreakPeriod, Device, User, WorkSchedule, WorkSession
 from app.models.enums import (
     ActivityState,
+    AlertType,
     BreakEndReason,
     BreakType,
     ClockOutReason,
@@ -156,6 +158,29 @@ def clock_in(
             message=f"Late arrival by {session.late_by_seconds // 60} minutes",
         )
 
+        policy = get_policy(db, user)
+        if policy.alert_on_late_arrival:
+            from app.services import alerts as alert_service
+
+            alert_service.raise_alert(
+                db,
+                employee=user,
+                alert_type=AlertType.LATE_ARRIVAL,
+                dedup_key=f"late:{user.id}:{work_date.isoformat()}",
+                session=session,
+                context={
+                    "late_by_seconds": session.late_by_seconds,
+                    "scheduled_start": (
+                        window.start_at.astimezone(
+                            get_zone(user.timezone)
+                        ).strftime("%H:%M")
+                        if window.start_at
+                        else "their scheduled start"
+                    ),
+                },
+                triggered_at=at,
+            )
+
     db.flush()
     return session
 
@@ -227,7 +252,7 @@ def clock_out(
         message=f"{user.full_name if user else 'Employee'} clocked out ({reason.value})",
     )
 
-    if session.is_early_departure:
+    if session.is_early_departure and user is not None:
         activity.log_event(
             db,
             user_id=session.user_id,
@@ -238,6 +263,20 @@ def clock_out(
             payload={"early_by_seconds": session.early_by_seconds},
             message=f"Early departure by {session.early_by_seconds // 60} minutes",
         )
+
+        policy = get_policy(db, user)
+        if policy.alert_on_early_departure:
+            from app.services import alerts as alert_service
+
+            alert_service.raise_alert(
+                db,
+                employee=user,
+                alert_type=AlertType.EARLY_DEPARTURE,
+                dedup_key=f"early:{user.id}:{session.id}",
+                session=session,
+                context={"early_by_seconds": session.early_by_seconds},
+                triggered_at=at,
+            )
 
     db.flush()
     return session

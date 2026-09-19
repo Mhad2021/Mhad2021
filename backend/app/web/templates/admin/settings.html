@@ -109,17 +109,43 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Schedule alerts</h2></div>
+    <div class="card-head"><h2>Schedule alerts</h2>
+      <span class="hint">Only apply to employees who have a work schedule assigned</span></div>
     <div class="card-body">
       <div class="form-grid">
-        <div class="field"><label style="font-weight:500;display:flex;gap:8px;align-items:center">
-          <input type="checkbox" name="alert_on_late_arrival" style="width:auto"
-                 {% if policy.alert_on_late_arrival %}checked{% endif %}> Flag late arrivals
-        </label></div>
-        <div class="field"><label style="font-weight:500;display:flex;gap:8px;align-items:center">
-          <input type="checkbox" name="alert_on_early_departure" style="width:auto"
-                 {% if policy.alert_on_early_departure %}checked{% endif %}> Flag early departures
-        </label></div>
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_late_arrival" style="width:auto"
+                   {% if policy.alert_on_late_arrival %}checked{% endif %}>
+            Alert on late arrival
+          </label>
+          <div class="help">Sent when someone clocks in past their start time plus
+            the schedule's grace period. Once per person per day.</div>
+        </div>
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_early_departure" style="width:auto"
+                   {% if policy.alert_on_early_departure %}checked{% endif %}>
+            Alert on early departure
+          </label>
+          <div class="help">Sent when someone clocks out before the end of their
+            shift, allowing for the schedule's grace period.</div>
+        </div>
+        <div class="field">
+          <label style="font-weight:500;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="alert_on_no_show" style="width:auto"
+                   {% if policy.alert_on_no_show %}checked{% endif %}>
+            Alert when someone never clocks in
+          </label>
+          <div class="help">Off by default. On a team with flexible hours this
+            fires constantly, and an alert everyone ignores devalues the ones
+            that matter.</div>
+        </div>
+        <div class="field"><label for="no_show_after_minutes">Wait before a no-show alert (minutes)</label>
+          <input type="number" id="no_show_after_minutes" name="no_show_after_minutes"
+                 value="{{ policy.no_show_after_minutes }}" min="5" max="720">
+          <div class="help">Measured from the scheduled start time. No alert is
+            sent once the working day has ended.</div></div>
       </div>
     </div>
   </div>

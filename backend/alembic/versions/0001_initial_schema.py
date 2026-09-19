@@ -1,8 +1,8 @@
-"""Initial schema
+"""Initial schema: users, devices, sessions, activity, alerts, audit
 
-Revision ID: 9c16cc78f47b
+Revision ID: 2ec9c6ebddb6
 Revises: 
-Create Date: 2026-09-19 12:07:01.868191
+Create Date: 2026-09-19 12:20:19.339699
 """
 from __future__ import annotations
 
@@ -87,6 +87,8 @@ def upgrade() -> None:
     sa.Column('auto_clock_out_after_hours', sa.Integer(), nullable=False),
     sa.Column('alert_on_late_arrival', sa.Boolean(), nullable=False),
     sa.Column('alert_on_early_departure', sa.Boolean(), nullable=False),
+    sa.Column('alert_on_no_show', sa.Boolean(), nullable=False),
+    sa.Column('no_show_after_minutes', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['department_id'], ['departments.id'], name=op.f('fk_policy_settings_department_id_departments'), ondelete='CASCADE'),

@@ -143,6 +143,14 @@ class PolicySettings(Base, TimestampMixin):
     alert_on_early_departure: Mapped[bool] = mapped_column(
         Boolean, default=True, nullable=False
     )
+    # Off by default: teams with flexible hours would find it noisy, and an
+    # alert nobody wants is an alert everybody learns to ignore.
+    alert_on_no_show: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    no_show_after_minutes: Mapped[int] = mapped_column(
+        Integer, default=60, nullable=False
+    )
 
     department: Mapped[Optional["Department"]] = relationship()
 

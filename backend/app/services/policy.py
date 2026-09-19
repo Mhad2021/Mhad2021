@@ -31,6 +31,8 @@ class EffectivePolicy:
     auto_clock_out_after_hours: int = 14
     alert_on_late_arrival: bool = True
     alert_on_early_departure: bool = True
+    alert_on_no_show: bool = False
+    no_show_after_minutes: int = 60
 
     def allowance_for(self, break_type: BreakType) -> int:
         return (

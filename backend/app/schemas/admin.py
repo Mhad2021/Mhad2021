@@ -168,6 +168,8 @@ class PolicyUpdate(BaseModel):
     auto_clock_out_after_hours: Optional[int] = Field(default=None, ge=1, le=48)
     alert_on_late_arrival: Optional[bool] = None
     alert_on_early_departure: Optional[bool] = None
+    alert_on_no_show: Optional[bool] = None
+    no_show_after_minutes: Optional[int] = Field(default=None, ge=5, le=720)
 
 
 class PolicyOut(BaseModel):
@@ -187,6 +189,8 @@ class PolicyOut(BaseModel):
     auto_clock_out_after_hours: int
     alert_on_late_arrival: bool
     alert_on_early_departure: bool
+    alert_on_no_show: bool
+    no_show_after_minutes: int
 
 
 # --------------------------------------------------------------------------- #

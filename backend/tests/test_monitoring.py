@@ -6,7 +6,7 @@ who closes the tracking app is caught by the absence of a heartbeat.
 """
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 import pytest
 
@@ -379,3 +379,129 @@ class TestAlertRouting:
             NotificationDelivery.alert_id == alert.id
         ).all()
         assert any(d.channel_type.value == "dashboard" for d in deliveries)
+
+
+class TestScheduleAlerts:
+    """The admin UI exposes these as toggles, so they must actually do something."""
+
+    def _workday_at(self, hour: int, minute: int = 0):
+        from datetime import datetime, time
+
+        day = utcnow().date()
+        while day.weekday() > 4:
+            day -= timedelta(days=1)
+        return datetime.combine(day, time(hour, minute), tzinfo=UTC)
+
+    def test_a_late_arrival_alerts_the_team_leader(
+        self, db, employee, leader, policy, schedule
+    ):
+        attendance.clock_in(db, employee, at=self._workday_at(9, 35))
+        db.commit()
+
+        raised = _alerts_of(db, AlertType.LATE_ARRIVAL)
+        assert len(raised) == 1
+        assert raised[0].recipient_id == leader.id
+        assert "35 minutes" in raised[0].message
+
+    def test_arriving_within_grace_raises_nothing(
+        self, db, employee, policy, schedule
+    ):
+        attendance.clock_in(db, employee, at=self._workday_at(9, 5))
+        db.commit()
+
+        assert _alerts_of(db, AlertType.LATE_ARRIVAL) == []
+
+    def test_the_late_arrival_toggle_is_respected(
+        self, db, employee, policy, schedule
+    ):
+        policy.alert_on_late_arrival = False
+        db.commit()
+
+        attendance.clock_in(db, employee, at=self._workday_at(9, 45))
+        db.commit()
+
+        assert _alerts_of(db, AlertType.LATE_ARRIVAL) == []
+
+    def test_an_early_departure_alerts_the_team_leader(
+        self, db, employee, leader, policy, schedule
+    ):
+        session = attendance.clock_in(db, employee, at=self._workday_at(9, 0))
+        db.commit()
+        attendance.clock_out(db, session, at=self._workday_at(15, 0))
+        db.commit()
+
+        raised = _alerts_of(db, AlertType.EARLY_DEPARTURE)
+        assert len(raised) == 1
+        assert raised[0].recipient_id == leader.id
+
+    def test_the_early_departure_toggle_is_respected(
+        self, db, employee, policy, schedule
+    ):
+        policy.alert_on_early_departure = False
+        db.commit()
+
+        session = attendance.clock_in(db, employee, at=self._workday_at(9, 0))
+        db.commit()
+        attendance.clock_out(db, session, at=self._workday_at(14, 0))
+        db.commit()
+
+        assert _alerts_of(db, AlertType.EARLY_DEPARTURE) == []
+
+    def test_no_show_alerting_is_off_by_default(self, db, employee, policy, schedule):
+        monitor.check_no_shows(db, utcnow())
+        db.commit()
+
+        assert _alerts_of(db, AlertType.NO_SHOW) == []
+
+    def test_no_show_alerts_when_enabled_and_overdue(
+        self, db, employee, leader, policy, schedule
+    ):
+        policy.alert_on_no_show = True
+        policy.no_show_after_minutes = 30
+        db.commit()
+
+        # Well past the 09:00 start, still inside the working day.
+        monitor.check_no_shows(db, self._workday_at(11, 0))
+        db.commit()
+
+        raised = _alerts_of(db, AlertType.NO_SHOW)
+        assert len(raised) == 1
+        assert raised[0].recipient_id == leader.id
+
+    def test_no_show_does_not_fire_for_someone_who_clocked_in(
+        self, db, employee, policy, schedule
+    ):
+        policy.alert_on_no_show = True
+        db.commit()
+        attendance.clock_in(db, employee, at=self._workday_at(9, 0))
+        db.commit()
+
+        monitor.check_no_shows(db, self._workday_at(11, 0))
+        db.commit()
+
+        assert _alerts_of(db, AlertType.NO_SHOW) == []
+
+    def test_no_show_alerts_only_once_per_day(
+        self, db, employee, policy, schedule
+    ):
+        policy.alert_on_no_show = True
+        policy.no_show_after_minutes = 30
+        db.commit()
+
+        for hour in (11, 12, 13):
+            monitor.check_no_shows(db, self._workday_at(hour, 0))
+            db.commit()
+
+        assert len(_alerts_of(db, AlertType.NO_SHOW)) == 1
+
+    def test_no_show_stops_once_the_working_day_is_over(
+        self, db, employee, policy, schedule
+    ):
+        policy.alert_on_no_show = True
+        db.commit()
+
+        # 20:00 is past the 18:00 end — the daily report covers it from here.
+        monitor.check_no_shows(db, self._workday_at(20, 0))
+        db.commit()
+
+        assert _alerts_of(db, AlertType.NO_SHOW) == []
