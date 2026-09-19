@@ -19,6 +19,11 @@
 
 * { box-sizing: border-box; }
 
+/* Any rule that sets `display` outranks the browser's own [hidden] rule, so
+   elements toggled with `el.hidden = true` stay visible. Buttons and the break
+   countdown both hit this. Restate it once, with enough weight to win. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -249,9 +254,30 @@ input:focus, select:focus, textarea:focus {
 
 @media (max-width: 900px) {
   .clock-panel { grid-template-columns: 1fr; }
-  .topbar { gap: 12px; padding: 0 14px; overflow-x: auto; }
-  .topbar nav { gap: 2px; }
+  .topbar { gap: 12px; padding: 0 14px; }
+  .topbar nav { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .topbar nav::-webkit-scrollbar { display: none; }
   .page { padding: 14px; }
+}
+
+/* On a phone the header has to stay one row. Nothing in it may wrap, the nav
+   scrolls sideways instead of pushing the rest out of shape, and the role
+   label goes — the person knows who they are. */
+@media (max-width: 680px) {
+  .topbar {
+    height: 52px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .topbar .brand { font-size: 14px; flex-shrink: 0; }
+  .topbar .brand-text { display: none; }
+  .topbar nav { flex: 1; min-width: 0; }
+  .topbar nav a { padding: 6px 9px; font-size: 13px; white-space: nowrap; }
+  .topbar .user-chip { flex-shrink: 0; gap: 8px; }
+  .topbar .user-chip .chip-name,
+  .topbar .user-chip .chip-role,
+  .topbar .user-chip a[href="/privacy"] { display: none; }
+  .topbar .user-chip a { font-size: 12.5px; white-space: nowrap; }
 }
 
 /* ---------- Employee tracking page ---------- */

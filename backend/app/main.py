@@ -14,7 +14,7 @@ from pathlib import Path
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -131,6 +131,22 @@ def create_app() -> FastAPI:
     static_dir = BASE_DIR / "web" / "static"
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # Browsers request this regardless of the <link rel="icon"> in the page,
+    # and an unanswered request shows up as a console error on every load.
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        from fastapi.responses import Response as FastAPIResponse
+
+        svg = (
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+            "<text y='.9em' font-size='90'>\U0001F552</text></svg>"
+        )
+        return FastAPIResponse(
+            content=svg,
+            media_type="image/svg+xml",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
     # --- Health ------------------------------------------------------------
     @app.get("/health", include_in_schema=False)

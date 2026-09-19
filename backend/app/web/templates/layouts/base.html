@@ -11,7 +11,7 @@
 <body>
 {% if user %}
 <header class="topbar">
-  <a href="/" class="brand">🕒 {{ app_name }}</a>
+  <a href="/" class="brand">🕒 <span class="brand-text">{{ app_name }}</span></a>
   <nav>
     {% if user.is_manager %}
       <a href="/team/live" class="{% if request.url.path == '/team/live' %}active{% endif %}">Live board</a>
@@ -29,7 +29,7 @@
     {% endif %}
   </nav>
   <div class="user-chip">
-    <span><strong>{{ user.full_name }}</strong> · {{ user.role.value.replace('_', ' ') }}</span>
+    <span class="chip-name"><strong>{{ user.full_name }}</strong><span class="chip-role"> · {{ user.role.value.replace('_', ' ') }}</span></span>
     <a href="/privacy" title="What this system records">Privacy</a>
     <a href="/logout">Sign out</a>
   </div>

@@ -82,7 +82,9 @@
 
     el.emoji.textContent = EMOJI[data.state] || "⚫";
     el.state.textContent = data.label || "";
-    el.detail.textContent = data.detail || "";
+    // During a break the countdown pill below already states the time left, so
+    // repeating it here just says the same thing twice.
+    el.detail.textContent = onBreak ? "" : data.detail || "";
 
     el.clockIn.textContent = data.clock_in_display || "—";
     el.worked.textContent = clockedIn ? duration(data.worked_seconds) : "—";
@@ -91,6 +93,10 @@
     el.clockBtn.textContent = clockedIn ? "Clock Out" : "Clock In";
     el.clockBtn.classList.toggle("secondary", clockedIn);
     el.clockBtn.dataset.clockState = clockedIn ? "in" : "out";
+    // act() disables every button while a request is in flight, so render()
+    // has to re-enable each one explicitly — anything it forgets stays dead.
+    el.clockBtn.disabled = busy;
+    el.endBreakBtn.disabled = busy;
 
     var used = data.breaks_used || { lunch: 0, short: 0 };
     var allow = data.allowances || {};
@@ -101,8 +107,8 @@
     el.shortBtn.hidden = onBreak;
     el.endBreakBtn.hidden = !onBreak;
 
-    el.lunchBtn.disabled = !clockedIn || onBreak || lunchLeft === 0;
-    el.shortBtn.disabled = !clockedIn || onBreak || shortLeft === 0;
+    el.lunchBtn.disabled = busy || !clockedIn || onBreak || lunchLeft === 0;
+    el.shortBtn.disabled = busy || !clockedIn || onBreak || shortLeft === 0;
     el.lunchBtn.textContent = "Start Lunch Break (" + lunchLeft + " left)";
     el.shortBtn.textContent = "Start 10-Minute Break (" + shortLeft + " left)";
     el.endBreakBtn.textContent =
