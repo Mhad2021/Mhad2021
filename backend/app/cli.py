@@ -3,6 +3,7 @@
     python -m app.cli init-db          create tables (dev; use Alembic in prod)
     python -m app.cli create-admin     create the first administrator
     python -m app.cli seed-demo        populate a demo org for evaluation
+    python -m app.cli serve            run the server for everyone on this network
     python -m app.cli demo-data        fill a demo install with realistic data
     python -m app.cli monitor-once     run one monitoring pass and exit
     python -m app.cli check-config     validate configuration before deploying
@@ -207,6 +208,82 @@ def demo_data(args) -> None:
     )
 
 
+def serve(args) -> None:
+    """Run the server so other machines on the same network can reach it.
+
+    ``uvicorn`` bound to 127.0.0.1 is reachable only from this machine, which
+    is the single most common reason a team cannot connect. This binds to every
+    interface and prints the address to hand out.
+    """
+    import uvicorn
+
+    from app.netinfo import all_lan_ips, mdns_hostname
+
+    addresses = all_lan_ips()
+    hostname = mdns_hostname()
+    port = args.port
+
+    print()
+    print(f"  {settings.app_name} is starting on port {port}.")
+    print()
+
+    if addresses:
+        primary = addresses[0]
+        ip_url = f"http://{primary}:{port}"
+
+        if hostname:
+            # Prefer the name: this machine's IP will change when the office
+            # router renews its lease, and every agent pointed at the old
+            # address would stop reporting until it was reconfigured by hand.
+            name_url = f"http://{hostname}:{port}"
+            print("  Give your team this address:")
+            print(f"      {name_url}")
+            print()
+            print(f"      (by IP: {ip_url} — but the name is safer, because")
+            print("       this machine's IP changes when the router renews it)")
+            recommended = name_url
+        else:
+            print("  Give your team this address:")
+            print(f"      {ip_url}")
+            print()
+            print("      Reserve this IP on your router, or it will change and")
+            print("      every tracker will stop reporting until reconfigured.")
+            recommended = ip_url
+
+        if len(addresses) > 1:
+            others = ", ".join(f"http://{a}:{port}" for a in addresses[1:])
+            print(f"      (also reachable on {others})")
+        print()
+        print(f"  On this machine:  http://localhost:{port}")
+
+        if "localhost" in settings.base_url or "127.0.0.1" in settings.base_url:
+            print()
+            print("  ! BASE_URL is set to localhost, so the 'Open dashboard' link in")
+            print("    alerts will not work for anyone else. Set it in .env to:")
+            print(f"        BASE_URL={recommended}")
+    else:
+        print("  ! No local network address found — this machine may be offline.")
+        print(f"    Only http://localhost:{port} will work.")
+
+    print()
+    print("  Everyone must be on the same Wi-Fi. Tracking stops for the whole")
+    print("  team while this machine is asleep, so keep the lid open:")
+    print("      macOS:    caffeinate -s python -m app.cli serve")
+    print("      Windows:  set Sleep to Never in Power Options")
+    print()
+    print("  Press Ctrl+C to stop.")
+    print()
+
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",  # noqa: S104 - binding to the LAN is the entire point
+        port=port,
+        reload=args.reload,
+        log_level="warning" if not args.verbose else "info",
+        proxy_headers=True,
+    )
+
+
 def monitor_once(args) -> None:
     from app.services import monitor
 
@@ -277,6 +354,13 @@ def main() -> None:
     p.add_argument("--password", default="DemoPass2024")
     p.add_argument("--timezone", default="UTC")
 
+    p = sub.add_parser(
+        "serve", help="Run the server for everyone on this network"
+    )
+    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--reload", action="store_true", help="restart on code changes")
+    p.add_argument("--verbose", action="store_true")
+
     p = sub.add_parser("demo-data", help="Fill a demo install with realistic data")
     p.add_argument("--weeks", type=int, default=2,
                    help="How many weeks of history to generate (default 2)")
@@ -289,6 +373,7 @@ def main() -> None:
         "init-db": lambda a: init_db(),
         "create-admin": create_admin,
         "seed-demo": seed_demo,
+        "serve": serve,
         "demo-data": demo_data,
         "monitor-once": monitor_once,
         "check-config": check_config,
