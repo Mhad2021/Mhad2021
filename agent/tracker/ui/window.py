@@ -137,6 +137,9 @@ class TrackerWindow:
         )
         self.short_button.pack(fill="x", pady=3, ipady=5)
 
+        # One button rather than two: only one break can run at a time, so a
+        # separate "End Lunch Break" would be disabled whenever this is enabled.
+        # The label follows whichever break is actually running.
         self.end_break_button = self._button(
             actions, "End Break", self._end_break, accent="#d97706"
         )
@@ -249,7 +252,10 @@ class TrackerWindow:
             state="normal" if can_break and short_left else "disabled",
             text=f"Start 10-Minute Break  ({short_left} left)",
         )
-        self.end_break_button.config(state="normal" if state.on_break else "disabled")
+        self.end_break_button.config(
+            state="normal" if state.on_break else "disabled",
+            text="End Lunch Break" if state.break_type == "lunch" else "End Break",
+        )
 
         self.allowance_label.config(
             text=(

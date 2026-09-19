@@ -101,7 +101,12 @@ class TrayIcon:
                 visible=lambda _: clocked_in() and not on_break(),
             ),
             pystray.MenuItem(
-                "End Break", lambda: self._act(self.engine.end_break),
+                lambda _: (
+                    "End Lunch Break"
+                    if self.engine.state.break_type == "lunch"
+                    else "End Break"
+                ),
+                lambda: self._act(self.engine.end_break),
                 visible=lambda _: on_break(),
             ),
             pystray.Menu.SEPARATOR,
