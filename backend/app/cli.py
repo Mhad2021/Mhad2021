@@ -3,6 +3,7 @@
     python -m app.cli init-db          create tables (dev; use Alembic in prod)
     python -m app.cli create-admin     create the first administrator
     python -m app.cli seed-demo        populate a demo org for evaluation
+    python -m app.cli demo-data        fill a demo install with realistic data
     python -m app.cli monitor-once     run one monitoring pass and exit
     python -m app.cli check-config     validate configuration before deploying
 """
@@ -147,6 +148,31 @@ def seed_demo(args) -> None:
         db.close()
 
 
+def demo_data(args) -> None:
+    """Populate the dashboards so a fresh install can actually be evaluated."""
+    from app.demo import generate
+
+    db = SessionLocal()
+    try:
+        stats = generate(db, weeks=args.weeks)
+    finally:
+        db.close()
+
+    print(
+        f"Demo data ready: {stats['employees']} employees, "
+        f"{stats['days']} working days, {stats['sessions']} sessions, "
+        f"{stats['alerts']} alerts.\n"
+        "\nSign in and look at:\n"
+        f"  {settings.base_url}/team/live   one employee in each live state\n"
+        f"  {settings.base_url}/alerts      alerts the monitor raised\n"
+        f"  {settings.base_url}/reports     attendance for the last fortnight\n"
+        "\nAccounts (all password DemoPass2024):\n"
+        "  demo.admin    admin, sees everything\n"
+        "  demo.leader   team leader, receives the alerts\n"
+        "  john.doe      employee, sees only their own day"
+    )
+
+
 def monitor_once(args) -> None:
     from app.services import monitor
 
@@ -217,6 +243,10 @@ def main() -> None:
     p.add_argument("--password", default="DemoPass2024")
     p.add_argument("--timezone", default="UTC")
 
+    p = sub.add_parser("demo-data", help="Fill a demo install with realistic data")
+    p.add_argument("--weeks", type=int, default=2,
+                   help="How many weeks of history to generate (default 2)")
+
     sub.add_parser("monitor-once", help="Run one monitoring pass and exit")
     sub.add_parser("check-config", help="Validate configuration and connectivity")
 
@@ -225,6 +255,7 @@ def main() -> None:
         "init-db": lambda a: init_db(),
         "create-admin": create_admin,
         "seed-demo": seed_demo,
+        "demo-data": demo_data,
         "monitor-once": monitor_once,
         "check-config": check_config,
     }[args.command](args)
