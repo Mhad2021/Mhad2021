@@ -72,12 +72,17 @@ staff in writing beforehand. See [docs/PRIVACY.md](docs/PRIVACY.md).
 ```bash
 cd backend
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-cp .env.example .env          # defaults use SQLite, fine for evaluation
+
+# SQLite, no Docker, no certificates — for evaluation only.
+cp .env.development.example .env
 
 .venv/bin/python -m app.cli init-db
 .venv/bin/python -m app.cli seed-demo
 .venv/bin/python -m uvicorn app.main:app --reload
 ```
+
+`.env.example` is the **production** template and is deliberately not usable
+as-is; the server refuses to start with its placeholder secrets.
 
 Open http://localhost:8000 and sign in as `demo.admin` / `DemoPass2024`.
 
