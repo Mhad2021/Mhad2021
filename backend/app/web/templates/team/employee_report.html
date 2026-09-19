@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ employee.full_name }} report{% endblock %}
+{% block content %}
+{% set s = summary.to_dict() %}
+<div class="page-head">
+  <div>
+    <h1>{{ employee.full_name }}</h1>
+    <p>{{ start.strftime('%d %b %Y') }} – {{ end.strftime('%d %b %Y') }}
+      {% if employee.department %} · {{ employee.department.name }}{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <form method="get" class="inline-form">
+      <div class="field"><label for="start">From</label>
+        <input type="date" id="start" name="start" value="{{ start }}"></div>
+      <div class="field"><label for="end">To</label>
+        <input type="date" id="end" name="end" value="{{ end }}"></div>
+      <button class="btn small" type="submit">Apply</button>
+    </form>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="label">Hours worked</div><div class="value">{{ s.worked_hours }}</div>
+    <div class="sub">{{ s.avg_daily_hours }} avg/day</div></div>
+  <div class="stat green"><div class="label">Active</div><div class="value">{{ s.active_hours }}</div>
+    <div class="sub">{{ s.activity_rate }}% of worked time</div></div>
+  <div class="stat orange"><div class="label">Idle</div><div class="value">{{ s.idle_hours }}</div></div>
+  <div class="stat"><div class="label">Days present</div><div class="value">{{ s.days_present }}</div>
+    <div class="sub">{{ s.days_absent }} absent</div></div>
+  <div class="stat amber"><div class="label">Late arrivals</div><div class="value">{{ s.late_days }}</div>
+    <div class="sub">{{ s.early_departures }} early departures</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Day by day</h2></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Clock in</th><th>Clock out</th><th>Scheduled</th>
+          <th class="num">Worked</th><th class="num">Active</th><th class="num">Idle</th>
+          <th class="num">Lunch</th><th class="num">Breaks</th><th class="num">Activity</th><th>Flags</th>
+        </tr></thead>
+        <tbody>
+        {% for day in summary.days %}
+          {% set d = day.to_dict() %}
+          <tr {% if day.is_absent %}style="opacity:.5"{% endif %}>
+            <td class="nowrap"><strong>{{ day.work_date.strftime('%a %d %b') }}</strong></td>
+            <td class="mono">{{ d.clock_in }}</td>
+            <td class="mono">{{ d.clock_out }}</td>
+            <td class="mono small muted">{{ d.scheduled_start }}–{{ d.scheduled_end }}</td>
+            <td class="num mono"><strong>{{ d.worked_hours }}</strong></td>
+            <td class="num mono">{{ d.active_hours }}</td>
+            <td class="num mono">{{ d.idle_hours }}</td>
+            <td class="num mono small">{{ d.lunch_display }}</td>
+            <td class="num mono small">{{ d.break_display }}</td>
+            <td class="num mono">{{ d.activity_rate }}%</td>
+            <td class="small">
+              {% if day.is_absent %}<span class="badge">absent</span>{% endif %}
+              {% if day.is_late %}<span class="badge bad">late {{ d.late_by }}</span>{% endif %}
+              {% if day.is_early_departure %}<span class="badge warn">early {{ d.early_by }}</span>{% endif %}
+              {% if day.was_edited %}<span class="badge">edited</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

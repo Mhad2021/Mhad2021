@@ -1,0 +1,73 @@
+{# Live board body. Polled by app.js; must stay standalone (no <html> wrapper). #}
+<div class="stats">
+  <div class="stat green"><div class="label">🟢 Active</div>
+    <div class="value">{{ summary.active }}</div></div>
+  <div class="stat amber"><div class="label">🟡 On break</div>
+    <div class="value">{{ summary.on_break }}</div></div>
+  <div class="stat orange"><div class="label">🟠 Idle</div>
+    <div class="value">{{ summary.idle }}</div></div>
+  <div class="stat red"><div class="label">🔴 Offline</div>
+    <div class="value">{{ summary.offline }}</div></div>
+  <div class="stat slate"><div class="label">⚫ Clocked out</div>
+    <div class="value">{{ summary.clocked_out }}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Team status</h2>
+    <span class="hint">{{ summary.total }} people
+      {% if summary.needs_attention %}· <strong style="color:var(--orange)">{{ summary.needs_attention }} need attention</strong>{% endif %}
+    </span>
+  </div>
+  <div class="card-body tight">
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Status</th>
+            <th>For</th>
+            <th>Detail</th>
+            <th>Clocked in</th>
+            <th class="num">Worked</th>
+            <th class="num">Active</th>
+            <th class="num">Idle</th>
+            <th>Team leader</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>
+              <a href="/team/employee/{{ row.user_id }}"><strong>{{ row.full_name }}</strong></a>
+              <div class="small faint">{{ row.employee_code }}{% if row.department %} · {{ row.department }}{% endif %}</div>
+            </td>
+            <td><span class="pill {{ row.colour }}">{{ row.emoji }} {{ row.label }}</span></td>
+            <td class="mono nowrap">
+              {% if row.since %}<span data-since="{{ row.since.timestamp() }}">{{ row.duration_display }}</span>
+              {% else %}<span class="faint">—</span>{% endif %}
+            </td>
+            <td class="small">
+              {{ row.detail }}
+              {% for warning in row.warnings %}<div class="badge warn" style="margin-top:3px">{{ warning }}</div>{% endfor %}
+            </td>
+            <td class="mono small">
+              {% if row.clock_in_at %}{{ row.clock_in_at.strftime('%H:%M') }}
+                {% if row.is_late %}<span class="badge bad">late</span>{% endif %}
+              {% else %}<span class="faint">—</span>{% endif %}
+            </td>
+            <td class="num mono">{{ row.worked_seconds | duration }}</td>
+            <td class="num mono">{{ row.active_seconds | duration }}</td>
+            <td class="num mono">{{ row.idle_seconds | duration }}</td>
+            <td class="small muted">{{ row.team_leader or '—' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">No employees match this filter.</div>
+    {% endif %}
+  </div>
+</div>

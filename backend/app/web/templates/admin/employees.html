@@ -1,0 +1,137 @@
+{% extends "layouts/base.html" %}
+{% block title %}People{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>People</h1>
+    <p>Add employees, set their schedule, and choose which team leader receives their alerts.</p></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Add an employee</h2>
+    <span class="hint">A temporary password is generated and shown once</span></div>
+  <div class="card-body">
+    <form data-api="/api/v1/employees/with-password" data-result="#new-employee-result">
+      <div class="form-grid">
+        <div class="field"><label for="full_name">Full name</label>
+          <input type="text" id="full_name" name="full_name" required></div>
+        <div class="field"><label for="employee_code">Employee code</label>
+          <input type="text" id="employee_code" name="employee_code" required></div>
+        <div class="field"><label for="username">Username</label>
+          <input type="text" id="username" name="username" pattern="[a-zA-Z0-9._\-]+" required></div>
+        <div class="field"><label for="email">Email</label>
+          <input type="email" id="email" name="email" required></div>
+        <div class="field"><label for="role">Role</label>
+          <select id="role" name="role">
+            <option value="employee">Employee</option>
+            <option value="team_leader">Team leader</option>
+            <option value="admin">Admin</option>
+          </select></div>
+        <div class="field"><label for="department_id">Department</label>
+          <select id="department_id" name="department_id">
+            <option value="">None</option>
+            {% for dept in departments %}<option value="{{ dept.id }}">{{ dept.name }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label for="team_leader_id">Team leader (receives alerts)</label>
+          <select id="team_leader_id" name="team_leader_id">
+            <option value="">Use department default</option>
+            {% for leader in leaders %}<option value="{{ leader.id }}">{{ leader.full_name }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label for="schedule_id">Work schedule</label>
+          <select id="schedule_id" name="schedule_id">
+            <option value="">Use department default</option>
+            {% for sched in schedules %}
+              <option value="{{ sched.id }}">{{ sched.name }} ({{ sched.start_time.strftime('%H:%M') }}–{{ sched.end_time.strftime('%H:%M') }})</option>
+            {% endfor %}
+          </select></div>
+        <div class="field"><label for="timezone">Timezone</label>
+          <input type="text" id="timezone" name="timezone" value="{{ user.timezone }}"
+                 placeholder="Europe/London"></div>
+        <div class="field"><label for="phone">Phone (for WhatsApp alerts)</label>
+          <input type="tel" id="phone" name="phone" placeholder="+44…"></div>
+      </div>
+      <div class="flex" style="margin-top:8px">
+        <button type="submit" class="btn">Create employee</button>
+        <span data-status class="small muted"></span>
+      </div>
+      <pre id="new-employee-result" hidden
+           style="margin-top:14px;background:#f8fafc;padding:12px;border-radius:8px;
+                  font-size:12px;overflow:auto;border:1px solid var(--border)"></pre>
+    </form>
+  </div>
+</div>
+
+<form method="get" action="/admin/employees" class="card" style="padding:14px 18px">
+  <div class="inline-form">
+    <div class="field" style="min-width:240px"><label for="search">Search</label>
+      <input type="text" id="search" name="search" value="{{ search or '' }}"
+             placeholder="Name, username, code or email"></div>
+    <div class="field">
+      <label style="display:flex;gap:7px;align-items:center;font-weight:500">
+        <input type="checkbox" name="include_inactive" value="true" style="width:auto"
+               {% if include_inactive %}checked{% endif %}> Include deactivated
+      </label></div>
+    <button type="submit" class="btn small">Search</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-head"><h2>All people</h2><span class="hint">{{ employees | length }} shown</span></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Role</th><th>Department</th><th>Team leader</th>
+          <th>Schedule</th><th class="num">Devices</th><th>Last sign-in</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for emp in employees %}
+          <tr {% if not emp.is_active %}style="opacity:.5"{% endif %}>
+            <td><a href="/team/employee/{{ emp.id }}"><strong>{{ emp.full_name }}</strong></a>
+              <div class="small faint">{{ emp.employee_code }} · {{ emp.username }}</div></td>
+            <td><span class="badge">{{ emp.role.replace('_', ' ') }}</span>
+              {% if not emp.is_active %}<span class="badge bad">inactive</span>{% endif %}</td>
+            <td class="small">{{ emp.department_name or '—' }}</td>
+            <td class="small">
+              <form data-api="/api/v1/employees/{{ emp.id }}/team-leader" data-reload="true"
+                    style="display:flex;gap:5px;align-items:center">
+                <select name="team_leader_id" onchange="this.form.requestSubmit()"
+                        style="font-size:13px;padding:5px 7px">
+                  <option value="">Department default</option>
+                  {% for leader in leaders %}
+                    {% if leader.id != emp.id %}
+                    <option value="{{ leader.id }}" {% if emp.team_leader_id == leader.id %}selected{% endif %}>
+                      {{ leader.full_name }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+            <td class="small">{{ emp.schedule_name or '—' }}</td>
+            <td class="num mono">{{ emp.device_count }}</td>
+            <td class="small muted nowrap">
+              {{ emp.last_login_at.strftime('%d %b %H:%M') if emp.last_login_at else 'never' }}</td>
+            <td class="right nowrap">
+              <form data-api="/api/v1/employees/{{ emp.id }}/enrollment-code"
+                    data-result="#code-{{ emp.id }}" style="display:inline">
+                <button type="submit" class="btn small secondary"
+                        title="One-time code to install the tracker on a laptop">Enroll device</button>
+              </form>
+              <form data-api="/api/v1/employees/{{ emp.id }}/reset-password"
+                    data-result="#code-{{ emp.id }}" style="display:inline">
+                <button type="submit" class="btn small secondary"
+                        data-confirm="Reset this person's password? They will have to set a new one.">Reset password</button>
+              </form>
+            </td>
+          </tr>
+          <tr><td colspan="8" style="padding:0;border:none">
+            <pre id="code-{{ emp.id }}" hidden
+                 style="margin:0 14px 12px;background:#f0fdf4;border:1px solid #bbf7d0;
+                        padding:10px;border-radius:8px;font-size:12px;overflow:auto"></pre>
+          </td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

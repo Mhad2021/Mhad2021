@@ -1,0 +1,102 @@
+{% extends "layouts/base.html" %}
+{% block title %}My day{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My day</h1>
+    <p>Your attendance for today. Clock in and out from the tracker app on your laptop.</p>
+  </div>
+  <div class="page-actions">
+    <span class="small faint" data-refresh-stamp>Updating live</span>
+    <a href="/privacy" class="btn small secondary">What is recorded?</a>
+  </div>
+</div>
+
+{% if not status.session_id %}
+<div class="notice info">
+  You are not clocked in. Open the {{ app_name }} tracker in your system tray and
+  press <strong>Clock In</strong> to start your day.
+</div>
+{% endif %}
+
+<div class="clock-panel">
+  <div class="card" data-refresh="/partials/my-status" data-interval="6" style="margin:0">
+    {% include "partials/my_status.html" %}
+  </div>
+
+  <div class="stack" style="margin:0">
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>Today</h2>
+        <span class="hint">{{ today.work_date.strftime('%a %d %b') }}</span></div>
+      <div class="card-body tight">
+        <table>
+          <tbody>
+            <tr><td class="muted">Clock in</td>
+                <td class="right mono">{{ today.to_dict().clock_in }}
+                  {% if today.is_late %}<span class="badge bad">late {{ today.late_by_seconds | duration }}</span>{% endif %}
+                </td></tr>
+            <tr><td class="muted">Clock out</td>
+                <td class="right mono">{{ today.to_dict().clock_out }}</td></tr>
+            <tr><td class="muted">Scheduled</td>
+                <td class="right mono">{{ today.to_dict().scheduled_start }} – {{ today.to_dict().scheduled_end }}</td></tr>
+            <tr><td class="muted">Lunch taken</td>
+                <td class="right mono">{{ today.lunch_seconds | duration }} ({{ today.lunch_count }})</td></tr>
+            <tr><td class="muted">Short breaks</td>
+                <td class="right mono">{{ today.short_break_seconds | duration }} ({{ today.short_break_count }})</td></tr>
+            <tr><td class="muted">Total worked</td>
+                <td class="right mono"><strong>{{ today.worked_seconds | duration }}</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-head"><h2>This week</h2>
+        <span class="hint">{{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b') }}</span></div>
+      <div class="card-body tight">
+        <table>
+          <tbody>
+            <tr><td class="muted">Days present</td><td class="right mono">{{ week.days_present }}</td></tr>
+            <tr><td class="muted">Hours worked</td><td class="right mono">{{ week.worked_seconds | hours }}</td></tr>
+            <tr><td class="muted">Active time</td><td class="right mono">{{ week.active_seconds | duration }}</td></tr>
+            <tr><td class="muted">Late arrivals</td><td class="right mono">{{ week.late_days }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Today's activity</h2>
+    <span class="hint">Your own record of what was logged</span></div>
+  <div class="card-body">
+    {% if status.recent_events %}
+    <ul class="timeline">
+      {% for event in status.recent_events %}
+      <li><span class="time mono">{{ event.at }}</span><span class="what">{{ event.message }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">Nothing recorded yet today.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Your break allowance</h2></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div><div class="label muted small">Lunch break</div>
+        <div style="font-size:18px;font-weight:600">{{ policy.lunch_break_max_seconds | duration }}</div>
+        <div class="small faint">{{ policy.lunch_breaks_per_day }} per day</div></div>
+      <div><div class="label muted small">Short break</div>
+        <div style="font-size:18px;font-weight:600">{{ policy.short_break_max_seconds | duration }}</div>
+        <div class="small faint">{{ policy.short_breaks_per_day }} per day</div></div>
+      <div><div class="label muted small">Inactivity limit</div>
+        <div style="font-size:18px;font-weight:600">{{ policy.idle_threshold_seconds | duration }}</div>
+        <div class="small faint">Your team leader is notified past this, unless a break is running</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

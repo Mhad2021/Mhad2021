@@ -1,0 +1,93 @@
+{% extends "layouts/base.html" %}
+{% block title %}Alerts setup{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Where alerts go</h1>
+    <p>Alerts always appear in the dashboard. Add a channel below to also push them to Slack, Teams, email or WhatsApp.</p></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Connected channels</h2></div>
+  <div class="card-body tight">
+    {% if channels %}
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Minimum severity</th><th>Scope</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for channel in channels %}
+        <tr>
+          <td><strong>{{ channel.name }}</strong>
+            <div class="small faint mono">
+              {% for key, value in channel.config_preview.items() %}{{ key }}={{ value }} {% endfor %}
+            </div></td>
+          <td><span class="badge">{{ channel.channel_type }}</span></td>
+          <td class="small">{{ channel.min_severity }}</td>
+          <td class="small muted">
+            {% if channel.alert_types %}{{ channel.alert_types | join(', ') }}{% else %}all alerts{% endif %}
+          </td>
+          <td class="small">
+            {% if not channel.is_enabled %}<span class="badge">disabled</span>
+            {% elif channel.last_error %}<span class="badge bad" title="{{ channel.last_error }}">failing</span>
+            {% elif channel.last_success_at %}<span class="badge good">working</span>
+            {% else %}<span class="badge">untested</span>{% endif %}
+          </td>
+          <td class="right nowrap">
+            <form data-api="/api/v1/settings/channels/{{ channel.id }}/test" style="display:inline">
+              <button type="submit" class="btn small secondary">Send test</button>
+              <span data-status class="small muted"></span>
+            </form>
+            <form data-api="/api/v1/settings/channels/{{ channel.id }}" data-method="DELETE"
+                  data-reload="true" style="display:inline">
+              <button type="submit" class="btn small secondary"
+                      data-confirm="Remove {{ channel.name }}?">Remove</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No external channels yet. Alerts are visible in the dashboard only.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% for type_def in catalog.types %}
+<div class="card">
+  <div class="card-head"><h2>Add {{ type_def.label }}</h2></div>
+  <div class="card-body">
+    <form data-api="/api/v1/settings/channels" data-reload="true">
+      <input type="hidden" name="channel_type" value="{{ type_def.type }}">
+      <div class="form-grid">
+        <div class="field"><label for="name_{{ type_def.type }}">Channel name</label>
+          <input type="text" id="name_{{ type_def.type }}" name="name"
+                 placeholder="{{ type_def.label }} alerts" required></div>
+        {% for field in type_def.fields %}
+        <div class="field">
+          <label for="{{ type_def.type }}_{{ field.key }}">{{ field.label }}</label>
+          <input type="{{ 'password' if field.secret else 'text' }}"
+                 id="{{ type_def.type }}_{{ field.key }}" name="cfg__{{ field.key }}"
+                 {% if field.required %}required{% endif %}>
+          {% if field.help %}<div class="help">{{ field.help }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="field"><label for="sev_{{ type_def.type }}">Minimum severity</label>
+          <select id="sev_{{ type_def.type }}" name="min_severity">
+            <option value="info">Everything (info and up)</option>
+            <option value="warning" selected>Warnings and critical</option>
+            <option value="critical">Critical only</option>
+          </select></div>
+        <div class="field"><label for="dept_{{ type_def.type }}">Limit to department</label>
+          <select id="dept_{{ type_def.type }}" name="department_id">
+            <option value="">All departments</option>
+            {% for dept in departments %}<option value="{{ dept.id }}">{{ dept.name }}</option>{% endfor %}
+          </select></div>
+      </div>
+      <div class="flex" style="margin-top:8px">
+        <button type="submit" class="btn">Add channel</button>
+        <span data-status class="small muted"></span>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "layouts/base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Alerts</h1>
+    <p>Inactivity, overrun breaks and laptops that stopped reporting.</p>
+  </div>
+  <div class="page-actions">
+    {% if show_all %}
+      <a href="/alerts" class="btn small secondary">Show open only</a>
+    {% else %}
+      <a href="/alerts?show_all=true" class="btn small secondary">Show all</a>
+    {% endif %}
+    {% if alerts and not show_all %}
+      <form data-api="/api/v1/alerts/acknowledge-all" data-reload="true" style="display:inline">
+        <button type="submit" class="btn small"
+                data-confirm="Acknowledge every open alert?">Acknowledge all</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>{{ 'All alerts' if show_all else 'Open alerts' }}</h2>
+    <span class="hint">{{ total }} total</span>
+  </div>
+  <div class="card-body tight">
+    {% if alerts %}
+      {% for alert in alerts %}
+      <div class="alert-row">
+        <div class="bar {{ alert.severity }}"></div>
+        <div class="body">
+          <div class="title">
+            <a href="/alerts/{{ alert.id }}">{{ alert.title }}</a>
+            {% if not alert.is_open %}<span class="badge good">handled</span>{% endif %}
+          </div>
+          <div class="msg">{{ alert.message }}</div>
+          <div class="meta">
+            <span>{{ alert.triggered_display }}</span>
+            <span>{{ alert.type.replace('_', ' ') }}</span>
+            {% if alert.subject_name %}<span>{{ alert.subject_name }}</span>{% endif %}
+            {% for delivery in alert.deliveries %}
+              {% if delivery.status == 'failed' %}
+                <span style="color:var(--red)">{{ delivery.channel }} delivery failed</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          {% if alert.is_open %}
+          <form data-api="/api/v1/alerts/{{ alert.id }}/acknowledge" data-reload="true">
+            <button type="submit" class="btn small secondary">Acknowledge</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        {% if show_all %}No alerts recorded yet.{% else %}Nothing needs your attention right now.{% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

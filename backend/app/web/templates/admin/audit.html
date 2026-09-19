@@ -1,0 +1,44 @@
+{% extends "layouts/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Audit log</h1>
+    <p>Every configuration change and manual correction, with who made it and from where.</p></div>
+  <div class="page-actions">
+    <form method="get" action="/admin/audit" class="inline-form">
+      <div class="field"><label for="entity_type">Filter</label>
+        <select id="entity_type" name="entity_type" onchange="this.form.submit()">
+          <option value="">Everything</option>
+          {% for option in ['user', 'department', 'schedule', 'policy_settings',
+                            'notification_channel', 'work_session', 'device', 'alert'] %}
+            <option value="{{ option }}" {% if entity_type == option %}selected{% endif %}>
+              {{ option.replace('_', ' ') }}</option>
+          {% endfor %}
+        </select></div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    {% if entries %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>What changed</th><th>From</th></tr></thead>
+        <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="small mono nowrap">{{ entry.at }}</td>
+            <td class="small">{{ entry.actor }}</td>
+            <td><span class="badge">{{ entry.action.replace('_', ' ') }}</span></td>
+            <td class="small">{{ entry.summary or (entry.entity_type ~ ' ' ~ (entry.entity_id or '')) }}</td>
+            <td class="small faint mono">{{ entry.ip_address or '—' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<div class="empty">Nothing logged yet.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

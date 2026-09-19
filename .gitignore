@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment & secrets
+.env
+*.env
+!.env.example
+
+# Databases
+*.db
+*.sqlite3
+presence-dev.db
+
+# Agent build output
+agent/build/dist/
+agent/build/build/
+agent/build/*.spec.bak
+*.exe
+*.msi
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

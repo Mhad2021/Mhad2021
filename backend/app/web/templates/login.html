@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · {{ app_name }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>🕒 {{ app_name }}</h1>
+    <p class="sub">Sign in to your attendance dashboard.</p>
+
+    {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username"
+               autofocus required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn" style="width:100%">Sign in</button>
+    </form>
+
+    <div class="auth-foot">
+      This system records attendance and work-session status only: clock-in and
+      clock-out times, approved breaks, whether your computer is active or idle,
+      and whether it is reachable. It does not record keystroke content,
+      messages, browsing, screenshots, webcam or personal files.
+    </div>
+  </div>
+</div>
+</body>
+</html>
