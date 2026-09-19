@@ -18,6 +18,7 @@
       <a href="/alerts" class="{% if request.url.path.startswith('/alerts') %}active{% endif %}">Alerts</a>
       <a href="/reports" class="{% if request.url.path.startswith('/reports') %}active{% endif %}">Reports</a>
     {% endif %}
+    <a href="/track" class="{% if request.url.path == '/track' %}active{% endif %}">Tracker</a>
     <a href="/me" class="{% if request.url.path == '/me' %}active{% endif %}">My day</a>
     {% if user.is_admin %}
       <a href="/admin/employees" class="{% if request.url.path == '/admin/employees' %}active{% endif %}">People</a>

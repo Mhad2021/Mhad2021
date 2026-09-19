@@ -56,7 +56,8 @@ def _ctx(request: Request, user: Optional[User], **extra) -> dict:
 
 
 def _redirect_home(user: User) -> RedirectResponse:
-    target = "/team/live" if user.is_manager else "/me"
+    # Employees land on the tracker, which is the thing they need every day.
+    target = "/team/live" if user.is_manager else "/track"
     return RedirectResponse(url=target, status_code=303)
 
 
@@ -93,7 +94,7 @@ def login_submit(
     if user.must_change_password:
         destination = "/change-password"
     elif destination == "/":
-        destination = "/team/live" if user.is_manager else "/me"
+        destination = "/team/live" if user.is_manager else "/track"
 
     response = RedirectResponse(url=destination, status_code=303)
     _issue_tokens(db, user, request, response)
@@ -177,6 +178,24 @@ def privacy(request: Request, db: DbSession, user: CurrentUser) -> Response:
 # --------------------------------------------------------------------------- #
 # Employee dashboard
 # --------------------------------------------------------------------------- #
+@router.get("/track", response_class=HTMLResponse)
+def tracker_page(request: Request, db: DbSession, user: CurrentUser) -> Response:
+    """The page employees keep open to clock in, take breaks and clock out.
+
+    No install: this is the browser alternative to the desktop tracker.
+    """
+    policy = get_policy_for_department(db, user.department_id)
+    return templates.TemplateResponse(
+        "employee/track.html",
+        _ctx(
+            request,
+            user,
+            heartbeat_seconds=policy.heartbeat_interval_seconds,
+            policy=policy,
+        ),
+    )
+
+
 @router.get("/me", response_class=HTMLResponse)
 def my_dashboard(request: Request, db: DbSession, user: CurrentUser) -> Response:
     from app.api.v1.live import my_status

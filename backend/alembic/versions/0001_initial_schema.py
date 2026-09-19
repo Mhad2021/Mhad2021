@@ -1,8 +1,8 @@
-"""Initial schema: users, devices, sessions, activity, alerts, audit
+"""Initial schema
 
-Revision ID: 2ec9c6ebddb6
+Revision ID: 179dfb2b57b8
 Revises: 
-Create Date: 2026-09-19 12:20:19.339699
+Create Date: 2026-09-19 13:55:45.668042
 """
 from __future__ import annotations
 
@@ -208,6 +208,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('device_id', sa.Integer(), nullable=True),
     sa.Column('work_date', sa.Date(), nullable=False),
+    sa.Column('client_kind', sa.Enum('AGENT', 'WEB', name='clientkind', native_enum=False, length=16), nullable=False),
     sa.Column('clock_in_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('clock_out_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('clock_out_reason', sa.Enum('MANUAL', 'AUTO_SCHEDULE', 'ADMIN', 'OFFLINE_TIMEOUT', name='clockoutreason', native_enum=False, length=24), nullable=True),

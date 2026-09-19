@@ -14,6 +14,23 @@ class Role(str, enum.Enum):
         return {"admin": 3, "team_leader": 2, "employee": 1}[self.value]
 
 
+class ClientKind(str, enum.Enum):
+    """Which client opened a work session.
+
+    This is not cosmetic. A browser tab can only observe input inside itself,
+    so it cannot report system-wide idle time the way the desktop agent can.
+    Alerts that depend on that signal are suppressed for web sessions rather
+    than being raised on evidence the client cannot actually provide.
+    """
+
+    AGENT = "agent"   # desktop tracker: real OS-level idle detection
+    WEB = "web"       # browser tab: attendance and breaks only
+
+    @property
+    def can_detect_idle(self) -> bool:
+        return self is ClientKind.AGENT
+
+
 class PresenceState(str, enum.Enum):
     """The live state shown on the manager board."""
 

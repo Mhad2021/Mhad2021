@@ -101,11 +101,21 @@ def create_app() -> FastAPI:
         )
 
     # --- API ---------------------------------------------------------------
-    from app.api.v1 import agent, alerts, auth, employees, live, reports, settings_api
+    from app.api.v1 import (
+        agent,
+        alerts,
+        auth,
+        employees,
+        live,
+        me,
+        reports,
+        settings_api,
+    )
 
     api = APIRouter(prefix="/api/v1")
     api.include_router(auth.router)
     api.include_router(agent.router)
+    api.include_router(me.router)
     api.include_router(employees.router)
     api.include_router(live.router)
     api.include_router(reports.router)

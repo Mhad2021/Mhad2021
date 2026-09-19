@@ -21,6 +21,16 @@
   </div>
   <div class="card-body tight">
     {% if rows %}
+    {% set web_count = rows | selectattr('client_kind', 'equalto', 'web') | list | length %}
+    {% if web_count %}
+      <div class="notice info" style="margin:14px 18px 0">
+        <div><strong>{{ web_count }}</strong>
+          {{ 'person is' if web_count == 1 else 'people are' }} tracking from the
+          browser. A web page cannot see activity in other applications, so
+          inactivity alerts are not raised for them — their clock-in, clock-out
+          and break times are recorded exactly as normal.</div>
+      </div>
+    {% endif %}
     <div class="table-wrap">
       <table>
         <thead>
@@ -43,7 +53,12 @@
               <a href="/team/employee/{{ row.user_id }}"><strong>{{ row.full_name }}</strong></a>
               <div class="small faint">{{ row.employee_code }}{% if row.department %} · {{ row.department }}{% endif %}</div>
             </td>
-            <td><span class="pill {{ row.colour }}">{{ row.emoji }} {{ row.label }}</span></td>
+            <td>
+              <span class="pill {{ row.colour }}">{{ row.emoji }} {{ row.label }}</span>
+              {% if row.client_kind == 'web' %}
+                <span class="badge" title="Tracking from the browser. A web page cannot see activity in other applications, so no inactivity alerts are raised for this person.">web</span>
+              {% endif %}
+            </td>
             <td class="mono nowrap">
               {% if row.since %}<span data-since="{{ row.since.timestamp() }}">{{ row.duration_display }}</span>
               {% else %}<span class="faint">—</span>{% endif %}

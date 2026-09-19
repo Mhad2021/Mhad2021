@@ -16,7 +16,13 @@ from app.core.timeutil import (
     utcnow,
 )
 from app.models import BreakPeriod, Department, User, WorkSession
-from app.models.enums import ActivityState, BreakType, PresenceState, Role
+from app.models.enums import (
+    ActivityState,
+    BreakType,
+    ClientKind,
+    PresenceState,
+    Role,
+)
 from app.services import activity, attendance
 from app.services.policy import EffectivePolicy, get_policy_for_department
 
@@ -58,6 +64,7 @@ class PresenceRow:
     break_type: Optional[str] = None
     break_remaining_seconds: Optional[int] = None
     last_heartbeat_at: Optional[datetime] = None
+    client_kind: str = "agent"
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -106,6 +113,8 @@ class PresenceRow:
             "active_display": humanize_duration(self.active_seconds),
             "idle_display": humanize_duration(self.idle_seconds),
             "is_late": self.is_late,
+            "client_kind": self.client_kind,
+            "tracks_idle": self.client_kind == "agent",
             "break_type": self.break_type,
             "break_remaining_seconds": self.break_remaining_seconds,
             "warnings": self.warnings,
@@ -135,13 +144,19 @@ def compute_state(
         else seconds_between(session.clock_in_at, now)
     )
     if heartbeat_age > policy.heartbeat_grace_seconds:
-        since = ensure_aware(session.offline_since or session.last_heartbeat_at or session.clock_in_at)
-        return (
-            PresenceState.OFFLINE,
-            since,
-            f"No heartbeat for {humanize_duration(heartbeat_age)}",
-            None,
+        since = ensure_aware(
+            session.offline_since or session.last_heartbeat_at or session.clock_in_at
         )
+        # Say what is actually known. For the desktop tracker a silent laptop
+        # means the machine is off or unreachable; for a browser tab it means
+        # the page was closed, which says nothing about whether they are working.
+        detail = (
+            f"Tracking page closed {humanize_duration(heartbeat_age)} ago — "
+            "still clocked in"
+            if session.client_kind is ClientKind.WEB
+            else f"No heartbeat for {humanize_duration(heartbeat_age)}"
+        )
+        return PresenceState.OFFLINE, since, detail, None
 
     open_break = attendance.get_open_break(db, session.id)
     if open_break is not None:
@@ -171,7 +186,14 @@ def compute_state(
             None,
         )
 
-    return PresenceState.ACTIVE, state_since, "Working", None
+    # The web client reports that the tab is open, nothing more. Saying
+    # "Working" would overstate what it can see.
+    detail = (
+        "Clocked in — tracking page open"
+        if session.client_kind is ClientKind.WEB
+        else "Working"
+    )
+    return PresenceState.ACTIVE, state_since, detail, None
 
 
 def build_row(
@@ -212,6 +234,7 @@ def build_row(
         )
         row.is_late = session.is_late_arrival
         row.last_heartbeat_at = session.last_heartbeat_at
+        row.client_kind = session.client_kind.value
 
         if session.is_late_arrival:
             row.warnings.append(
@@ -224,7 +247,10 @@ def build_row(
         if row.break_remaining_seconds < 0:
             row.warnings.append("Break overrun")
 
-    if state is PresenceState.IDLE and row.duration_seconds >= policy.idle_threshold_seconds:
+    if (
+        state is PresenceState.IDLE
+        and row.duration_seconds >= policy.idle_threshold_seconds
+    ):
         row.warnings.append("Idle past threshold, no break active")
 
     return row

@@ -39,6 +39,30 @@ phone calls, in meetings, or reading long documents look idle to any system that
 measures keyboard input. Either raise the threshold or make sure those teams use
 the break buttons.
 
+## Two ways employees can track
+
+| | Browser page (`/track`) | Desktop tracker |
+|---|---|---|
+| Install | none | installer per laptop |
+| Clock in/out, breaks, hours | yes | yes |
+| Late arrival, early departure | yes | yes |
+| Break overrun alerts | yes | yes |
+| **Inactivity alerts** | **no — see below** | yes |
+| Detects laptop off or asleep | no | yes |
+| Works on macOS | yes | not yet |
+
+**Why the browser page raises no inactivity alerts.** A web page can only see
+input inside its own tab. Someone working all day in Excel with the tracker in
+a background window looks completely idle to it. Alerting on that would tell a
+team leader an employee was inactive while they were working, so the signal is
+not collected at all.
+
+What that costs you: you cannot tell whether a clocked-in web user is at their
+desk. What it buys you: no false accusations, and no installer to deploy.
+
+Mixed teams are fine. The board marks web users with a `web` badge and shows a
+note saying how many there are, so nobody misreads a green dot.
+
 ## Setup tasks
 
 ### Assign a team leader

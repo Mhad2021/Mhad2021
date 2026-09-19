@@ -24,6 +24,7 @@ from app.models.enums import (
     ActivityState,
     BreakEndReason,
     BreakType,
+    ClientKind,
     ClockOutReason,
     EventSource,
     EventType,
@@ -53,6 +54,12 @@ class WorkSession(Base, TimestampMixin):
 
     # Local calendar date the session belongs to, used for daily reports.
     work_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Which client opened this session; decides which alerts can apply to it.
+    client_kind: Mapped[ClientKind] = mapped_column(
+        SAEnum(ClientKind, native_enum=False, length=16),
+        default=ClientKind.AGENT,
+        nullable=False,
+    )
     clock_in_at: Mapped[datetime] = mapped_column(
         UTCDateTime, nullable=False
     )

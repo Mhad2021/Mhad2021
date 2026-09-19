@@ -19,6 +19,7 @@ from app.models.enums import (
     ActivityState,
     AlertType,
     BreakEndReason,
+    ClientKind,
     ClockOutReason,
     EventSource,
     EventType,
@@ -62,6 +63,10 @@ def detect_offline(
     if age <= policy.heartbeat_grace_seconds:
         return
 
+    # A closed browser tab is not a laptop going dark. People close tabs while
+    # carrying on working, so the board shows it honestly but no alert is sent.
+    web_session = session.client_kind is ClientKind.WEB
+
     if not session.is_offline:
         # Backdate the offline run to the last confirmed heartbeat so the gap is
         # not counted as worked time.
@@ -82,10 +87,15 @@ def detect_offline(
             event_type=EventType.HEARTBEAT_LOST,
             occurred_at=last_beat,
             source=EventSource.SERVER,
-            payload={"grace_seconds": policy.heartbeat_grace_seconds},
+            payload={
+                "grace_seconds": policy.heartbeat_grace_seconds,
+                "client": session.client_kind.value,
+            },
             message=(
-                "Heartbeat stopped — laptop shut down, asleep, disconnected, or "
-                "the tracking app was terminated"
+                "Tracking page closed or the browser stopped reporting"
+                if web_session
+                else "Heartbeat stopped — laptop shut down, asleep, "
+                "disconnected, or the tracking app was terminated"
             ),
         )
         logger.info(
@@ -94,6 +104,9 @@ def detect_offline(
             session.user_id,
             last_beat.isoformat(),
         )
+
+    if web_session:
+        return
 
     offline_for = seconds_between(session.offline_since or last_beat, now)
     if offline_for >= policy.offline_alert_after_seconds:
@@ -118,6 +131,12 @@ def detect_offline(
 def check_idle(
     db: Session, session: WorkSession, policy: EffectivePolicy, now: datetime
 ) -> None:
+    # A browser tab only sees input inside itself, so it cannot tell "away from
+    # the desk" from "working in another application". Alerting on that would
+    # accuse people of being idle while they were working, so web sessions are
+    # never assessed for inactivity at all.
+    if not session.client_kind.can_detect_idle:
+        return
     if session.is_offline:
         return
     if session.current_state not in (ActivityState.IDLE, ActivityState.LOCKED):

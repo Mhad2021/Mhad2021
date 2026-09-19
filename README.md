@@ -10,9 +10,18 @@ add macOS.
 
 ## What it does
 
-**For employees** — a small tray app with six buttons: Clock In, Clock Out,
-Start Lunch Break, End Lunch Break, Start 10-Minute Break, End Break. It shows
-their status, hours worked so far, and how long is left on a running break.
+**For employees** — two ways to track, using the same server:
+
+- A **browser page** at `/track` with the same six buttons. No install, works on
+  any OS. Records attendance, breaks and hours.
+- A **desktop tray app** for Windows. Everything the page does, plus real
+  system-wide idle detection.
+
+The difference is what each one can honestly observe. A browser tab can only
+see input inside itself, so it cannot tell "away from the desk" from "working
+in Photoshop". Rather than guess, web sessions report attendance only and are
+never assessed for inactivity — the board says `web` next to those people so a
+manager knows what the signal is worth.
 
 **For team leaders** — a live board showing who is active, on break, idle,
 offline or clocked out, and for how long. Alerts arrive in the dashboard and in

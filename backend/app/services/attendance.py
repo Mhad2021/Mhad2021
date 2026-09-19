@@ -23,6 +23,7 @@ from app.models.enums import (
     AlertType,
     BreakEndReason,
     BreakType,
+    ClientKind,
     ClockOutReason,
     EventSource,
     EventType,
@@ -99,6 +100,7 @@ def clock_in(
     device: Optional[Device] = None,
     at: Optional[datetime] = None,
     source: EventSource = EventSource.AGENT,
+    client_kind: ClientKind = ClientKind.AGENT,
 ) -> WorkSession:
     at = ensure_aware(at or utcnow())
 
@@ -116,6 +118,7 @@ def clock_in(
         user_id=user.id,
         device_id=device.id if device else None,
         work_date=work_date,
+        client_kind=client_kind,
         clock_in_at=at,
         scheduled_start_at=window.start_at,
         scheduled_end_at=window.end_at,
@@ -142,7 +145,7 @@ def clock_in(
         event_type=EventType.CLOCK_IN,
         occurred_at=at,
         source=source,
-        payload={"work_date": work_date.isoformat()},
+        payload={"work_date": work_date.isoformat(), "client": client_kind.value},
         message=f"{user.full_name} clocked in",
     )
 

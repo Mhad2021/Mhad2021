@@ -1,0 +1,63 @@
+{% extends "layouts/base.html" %}
+{% block title %}Time tracker{% endblock %}
+{% block content %}
+<div class="tracker" id="tracker" data-heartbeat="{{ heartbeat_seconds }}">
+
+  <div class="tracker-card">
+    <div class="tracker-head">
+      <div>
+        <div class="tracker-name">{{ user.full_name }}</div>
+        <div class="tracker-sub">{{ user.employee_code }}{% if user.department %} · {{ user.department.name }}{% endif %}</div>
+      </div>
+      <span class="conn" data-conn>Connecting…</span>
+    </div>
+
+    <div class="tracker-status">
+      <div class="tracker-emoji" data-emoji>⚫</div>
+      <div class="tracker-state" data-state>Loading</div>
+      <div class="tracker-detail" data-detail></div>
+      <div class="tracker-countdown" data-countdown hidden></div>
+    </div>
+
+    <div class="tracker-metrics">
+      <div><span class="k">Clocked in</span><span class="v" data-clock-in>—</span></div>
+      <div><span class="k">Worked today</span><span class="v" data-worked>—</span></div>
+      <div><span class="k">Breaks</span><span class="v" data-breaks>—</span></div>
+    </div>
+
+    <div class="tracker-actions">
+      <button class="btn big" data-action="clock" data-clock-state="out">Clock In</button>
+
+      <div class="tracker-break-row">
+        <button class="btn secondary" data-action="lunch">Start Lunch Break</button>
+        <button class="btn secondary" data-action="short">Start 10-Minute Break</button>
+      </div>
+      <button class="btn amber" data-action="end-break" hidden>End Break</button>
+    </div>
+
+    <p class="tracker-msg" data-msg></p>
+
+    <div class="tracker-allowance" data-allowance></div>
+  </div>
+
+  <details class="tracker-note">
+    <summary>What this page records</summary>
+    <p>
+      It records the times you press these buttons — when you clock in and out,
+      and when your breaks start and end — and it tells the server this page is
+      open, roughly once a minute.
+    </p>
+    <p>
+      <strong>It cannot see anything outside this page.</strong> Your browser does
+      not let a website watch your typing, your other tabs, your other
+      applications or your files, and this page does not try. If you close this
+      tab you are still clocked in; your team leader is not alerted for it.
+    </p>
+    <p><a href="/privacy">Full details of what is recorded</a></p>
+  </details>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/track.js" defer></script>
+{% endblock %}
