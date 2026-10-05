@@ -35,3 +35,5 @@ Thumbs.db
 # outreach: local comment queue and drafts
 outreach/queue.jsonl
 outreach/*.jsonl
+social/queue.jsonl
+social/*.jsonl

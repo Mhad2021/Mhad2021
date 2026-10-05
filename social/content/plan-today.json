@@ -1,0 +1,14 @@
+[
+  {"platform": "instagram", "asset_kind": "image", "ai_generated": true,
+   "assets": ["https://REPLACE-WITH-PUBLIC-URL/still-01.jpg"],
+   "hashtags": ["smallbusiness", "aisearch"],
+   "text": "Ask ChatGPT who the best [TRADE] in [CITY] is.\n\nIt'll name three.\n\nIf you're not one of them, there is no fourth place to come in. You're just not in the answer.\n\nThirty seconds to check on your own business. Most owners never have."},
+  {"platform": "facebook", "asset_kind": "image", "ai_generated": true,
+   "assets": ["https://REPLACE-WITH-PUBLIC-URL/still-01.jpg"],
+   "hashtags": [],
+   "text": "Something worth trying this afternoon.\n\nOpen ChatGPT and ask it who the best [TRADE] in [CITY] is. It won't give you a list of ten. It'll name three, like it's stating a fact.\n\nIf your business isn't one of them, you're not fourth in line. There's no fourth. The answer just doesn't have you in it.\n\nMost owners have never checked. It takes about thirty seconds."},
+  {"platform": "tiktok", "asset_kind": "video", "ai_generated": true,
+   "assets": ["https://REPLACE-WITH-PUBLIC-URL/reel-01.mp4"],
+   "hashtags": ["smallbusiness"],
+   "text": "Three businesses get named. You're not one of them. There's no fourth place."}
+]

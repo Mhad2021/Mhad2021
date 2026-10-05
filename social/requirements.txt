@@ -1,0 +1,2 @@
+# autopost needs no third-party runtime dependencies.
+# Publishing goes through the Zapier MCP tools, not a Python SDK.
