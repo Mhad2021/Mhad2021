@@ -1,0 +1,6 @@
+# --- Config & validation ---
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# --- Comment drafting (optional: only `draft` needs it) ---
+anthropic>=1.7.0

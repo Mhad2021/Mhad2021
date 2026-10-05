@@ -1,0 +1,56 @@
+[
+  {
+    "urn": "urn:li:activity:7001",
+    "author": {"urn": "urn:li:person:dana", "name": "Dana Reyes",
+               "headline": "Founder, Harbourline Logistics", "company": "Harbourline Logistics",
+               "profile_url": "https://www.linkedin.com/in/example-dana", "icp_fit": 0.92},
+    "text": "We moved our quoting process off email last quarter. Quote-to-close went from 9 days to 3. What surprised me is that win rate didn't move at all — we just found out faster.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7001",
+    "age_minutes": 48, "comment_count": 6, "reaction_count": 180, "relevance": 0.85
+  },
+  {
+    "urn": "urn:li:activity:7002",
+    "author": {"urn": "urn:li:person:sam", "name": "Sam Okonkwo",
+               "headline": "MD, Northfield Dental Group", "company": "Northfield Dental Group",
+               "profile_url": "https://www.linkedin.com/in/example-sam", "icp_fit": 0.78},
+    "text": "Three years running the practice and I still cannot get a straight answer on where new patients actually come from. Every agency shows me a different number.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7002",
+    "age_minutes": 75, "comment_count": 2, "reaction_count": 64, "relevance": 0.95
+  },
+  {
+    "urn": "urn:li:activity:7003",
+    "author": {"urn": "urn:li:person:priya", "name": "Priya Raman",
+               "headline": "CEO, Castlewood Interiors", "company": "Castlewood Interiors",
+               "profile_url": "https://www.linkedin.com/in/example-priya", "icp_fit": 0.88},
+    "text": "Agree? 👇 Comment GROWTH below and I'll send you my 12-step playbook for scaling past 1M.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7003",
+    "age_minutes": 20, "comment_count": 240, "reaction_count": 900, "relevance": 0.4
+  },
+  {
+    "urn": "urn:li:activity:7004",
+    "author": {"urn": "urn:li:person:tomas", "name": "Tomas Lindqvist",
+               "headline": "Owner, Lindqvist Plant Hire", "company": "Lindqvist Plant Hire",
+               "profile_url": "https://www.linkedin.com/in/example-tomas", "icp_fit": 0.81},
+    "text": "Spent 40k on a website rebuild. Traffic is up 30%. Enquiries are flat. Somebody explain that to me.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7004",
+    "age_minutes": 310, "comment_count": 11, "reaction_count": 95, "relevance": 0.9
+  },
+  {
+    "urn": "urn:li:activity:7005",
+    "author": {"urn": "urn:li:person:grace", "name": "Grace Mbeki",
+               "headline": "Head of Ops, Tide & Co", "company": "Tide & Co",
+               "profile_url": "https://www.linkedin.com/in/example-grace", "icp_fit": 0.3},
+    "text": "Lovely team offsite in Lisbon this week. Grateful for these humans.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7005",
+    "age_minutes": 30, "comment_count": 4, "reaction_count": 20, "relevance": 0.05
+  },
+  {
+    "urn": "urn:li:activity:7006",
+    "author": {"urn": "urn:li:person:ahmed", "name": "Ahmed Farouk",
+               "headline": "Founder, Breakwater Legal", "company": "Breakwater Legal",
+               "profile_url": "https://www.linkedin.com/in/example-ahmed", "icp_fit": 0.9},
+    "text": "Our best referral source is a competitor we lost a pitch to in 2021. They send us everything outside their remit. Nobody plans for that.",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7006",
+    "age_minutes": 1680, "comment_count": 30, "reaction_count": 410, "relevance": 0.7
+  }
+]

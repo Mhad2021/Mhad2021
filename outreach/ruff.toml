@@ -1,0 +1,15 @@
+line-length = 96
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",   # line length is handled by the formatter
+    "N818",   # exception names follow the domain, not the Error suffix rule
+    "UP007",  # Optional[X] rather than X | None, matching the rest of the repo
+    "UP045",  # same choice, under ruff's newer rule code
+    "UP042",  # str+Enum mirrors backend/app/models/enums.py
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]
